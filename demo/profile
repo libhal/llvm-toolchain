@@ -1,0 +1,4 @@
+[settings]
+build_type=MinSizeRel
+arch=cortex-m4f
+os=baremetal

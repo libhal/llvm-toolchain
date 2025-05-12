@@ -1,0 +1,46 @@
+sources:
+  "20.1.4":
+    "Windows":
+      "x86_64":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.4/clang+llvm-20.1.4-x86_64-pc-windows-msvc.tar.xz"
+        sha256: "2b12ac1a0689e29a38a7c98c409cbfa83f390aea30c60b7a06e4ed73f82d2457"
+      "armv8":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.4/clang+llvm-20.1.4-aarch64-pc-windows-msvc.tar.xz"
+        sha256: "5ebb023bd1470333ef4292b712bd35eed12a93ac5a81cec2e6718d0dc7142a70"
+    "Linux":
+      "x86_64":
+        url: ""
+        sha256: "placeholder_sha256_to_be_calculated"
+      "armv8":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.4/clang+llvm-20.1.4-armv7a-linux-gnueabihf.tar.gz"
+        sha256: "0ddd789fba0e2de8b22ba07a62293140c0232e90aa2e809731e951d7cf3cbc3c"
+    "Macos":
+      "x86_64":
+        url: ""
+        sha256: "placeholder_sha256_to_be_calculated"
+      "armv8":
+        url: ""
+        sha256: ""
+
+  "19.1.7":
+    "Windows":
+      "x86_64":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-win64.exe"
+        sha256: "placeholder_sha256_to_be_calculated"
+      "x86":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-win32.exe"
+        sha256: "placeholder_sha256_to_be_calculated"
+    "Linux":
+      "x86_64":
+        url: ""
+        sha256: "placeholder_sha256_to_be_calculated"
+      "armv8":
+        url: ""
+        sha256: "placeholder_sha256_to_be_calculated"
+    "Macos":
+      "x86_64":
+        url: ""
+        sha256: "placeholder_sha256_to_be_calculated"
+      "armv8":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-macOS-ARM64.tar.xz"
+        sha256: "d93bf12952d89fe4ec7501c40475718b722407da6a8d651f05c995863468e570"

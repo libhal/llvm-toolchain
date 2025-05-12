@@ -1,0 +1,5 @@
+versions:
+  "19.1.7":
+    folder: "all"
+  "20.1.4":
+    folder: "all"
