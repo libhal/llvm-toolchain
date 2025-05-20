@@ -17,6 +17,10 @@ class TestPackageConan(ConanFile):
         cmake_layout(self)
 
     def build(self):
+        # Dump all environment variables
+        self.output.info("=== ENVIRONMENT VARIABLES ===")
+        for key, value in sorted(os.environ.items()):
+            self.output.info(f"ENV: {key} = {value}")
         cmake = CMake(self)
         cmake.configure()
         cmake.build()

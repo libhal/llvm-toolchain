@@ -1,4 +1,11 @@
 [settings]
-build_type=MinSizeRel
-arch=cortex-m4f
-os=baremetal
+arch=armv8
+build_type=Release
+compiler=clang
+compiler.cppstd=23
+compiler.libcxx=libc++
+compiler.version=19
+os=Macos
+
+[tool_requires]
+llvm-toolchain/19.1.7

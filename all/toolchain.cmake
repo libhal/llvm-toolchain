@@ -1,12 +1,12 @@
 # LLVM/Clang CMake toolchain file
 # This file should be placed in the package and referenced in the conanfile.py
 
-# # Set system name for cross-compilation
-# # Valid options: Linux, Darwin (macOS), Windows, etc.
-# set(CMAKE_SYSTEM_NAME ${LLVM_CMAKE_SYSTEM_NAME})
+# Set system name for cross-compilation
+# Valid options: Linux, Darwin (macOS), Windows, etc.
+set(CMAKE_SYSTEM_NAME ${LLVM_CMAKE_SYSTEM_NAME})
 
-# # Set architecture name
-# set(CMAKE_SYSTEM_PROCESSOR ${LLVM_CMAKE_SYSTEM_PROCESSOR})
+# Set architecture name
+set(CMAKE_SYSTEM_PROCESSOR ${LLVM_CMAKE_SYSTEM_PROCESSOR})
 
 # LLVM installation path comes from the Conan package
 set(LLVM_INSTALL_DIR $ENV{LLVM_INSTALL_DIR})

@@ -119,8 +119,3 @@ class LLVMToolchainPackage(ConanFile):
         # Make the CMake toolchain file available
         f = os.path.join(self.package_folder, "res/toolchain.cmake")
         self.conf_info.append("tools.cmake.cmaketoolchain:user_toolchain", f)
-
-        # If there's a cmake directory with config files, add it to CMAKE_PREFIX_PATH
-        if os.path.exists(os.path.join(self.package_folder, "lib", "cmake", "llvm")):
-            cmake_path = os.path.join(self.package_folder, "lib", "cmake")
-            self.buildenv_info.append_path("CMAKE_PREFIX_PATH", cmake_path)

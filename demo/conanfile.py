@@ -9,7 +9,7 @@ class Demo(ConanFile):
 
     @property
     def _compiler_version(self):
-        SUPPORTED_COMPILER_VERSIONS = ["11.3", "12.2", "12.3"]
+        SUPPORTED_COMPILER_VERSIONS = ["19.1.7"]
 
         if self.settings.compiler.version not in SUPPORTED_COMPILER_VERSIONS:
             raise ConanInvalidConfiguration(
@@ -20,9 +20,9 @@ class Demo(ConanFile):
         return str(self.settings.compiler.version)
 
     def validate(self):
-        if self.settings.compiler != "gcc":
+        if self.settings.compiler != "clang":
             raise ConanInvalidConfiguration(
-                "This demo requires the compiler to be GCC, provided: " +
+                "This demo requires the compiler to be clang, provided: " +
                 f"'{self.settings.compiler}'")
 
     def build_requirements(self):
