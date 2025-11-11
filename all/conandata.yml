@@ -1,26 +1,23 @@
 sources:
-  "20.1.4":
-    "Windows":
-      "x86_64":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.4/clang+llvm-20.1.4-x86_64-pc-windows-msvc.tar.xz"
-        sha256: "2b12ac1a0689e29a38a7c98c409cbfa83f390aea30c60b7a06e4ed73f82d2457"
-      "armv8":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.4/clang+llvm-20.1.4-aarch64-pc-windows-msvc.tar.xz"
-        sha256: "5ebb023bd1470333ef4292b712bd35eed12a93ac5a81cec2e6718d0dc7142a70"
+  "20.1.8":
     "Linux":
       "x86_64":
-        url: ""
-        sha256: "placeholder_sha256_to_be_calculated"
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-X64.tar.xz"
+        sha256: "1ead36b3dfcb774b57be530df42bec70ab2d239fbce9889447c7a29a4ddc1ae6"
       "armv8":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.4/clang+llvm-20.1.4-armv7a-linux-gnueabihf.tar.gz"
-        sha256: "0ddd789fba0e2de8b22ba07a62293140c0232e90aa2e809731e951d7cf3cbc3c"
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-ARM64.tar.xz"
+        sha256: "b855cc17d935fdd83da82206b7a7cfc680095efd1e9e8182c4a05e761958bef8"
     "Macos":
-      "x86_64":
-        url: ""
-        sha256: "placeholder_sha256_to_be_calculated"
       "armv8":
-        url: ""
-        sha256: ""
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-macOS-ARM64.tar.xz"
+        sha256: "a9a22f450d35f1f73cd61ab6a17c6f27d8f6051d56197395c1eb397f0c9bbec4"
+    "Windows":
+      "x86_64":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-x86_64-pc-windows-msvc.tar.xz"
+        sha256: "f229769f11d6a6edc8ada599c0cda964b7dee6ab1a08c6cf9dd7f513e85b107f"
+      "armv8":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-aarch64-pc-windows-msvc.tar.xz"
+        sha256: "0df3e81e8fe26370dd2b60b9e009d81cd130d3fdc41b257434aa663c5d9f0c13"
 
   "19.1.7":
     "Windows":
