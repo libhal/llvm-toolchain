@@ -1,5 +1,6 @@
 import os
 import platform
+from pathlib import Path
 from conan import ConanFile
 from conan.tools.files import get, copy, download, rmdir, save
 from conan.errors import ConanInvalidConfiguration
@@ -19,7 +20,6 @@ class LLVMToolchainPackage(ConanFile):
     options = {
         "default_arch": [True, False],
         "lto": [True, False],
-        "fat_lto": [True, False],
         "function_sections": [True, False],
         "data_sections": [True, False],
         "gc_sections": [True, False],
@@ -28,7 +28,6 @@ class LLVMToolchainPackage(ConanFile):
     default_options = {
         "default_arch": True,
         "lto": True,
-        "fat_lto": True,
         "function_sections": True,
         "data_sections": True,
         "gc_sections": True,
@@ -37,7 +36,6 @@ class LLVMToolchainPackage(ConanFile):
     options_description = {
         "default_arch": "Automatically inject architecture-appropriate -target and -mcpu arguments into compilation flags.",
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
-        "fat_lto": "Enable linkers without LTO support to still build with LTO enabled binaries. This option is ignored if the `lto` option is False",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
         "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled."
@@ -91,17 +89,20 @@ class LLVMToolchainPackage(ConanFile):
 
         # Download and extract the LLVM binary package
         # All platforms use tar.xz archives now
-        get(self, url, sha256=sha256, strip_root=True, destination=self.build_folder)
+        get(self, url, sha256=sha256, strip_root=True,
+            destination=self.build_folder)
 
     def package(self):
         # Copy all LLVM files from build to package folder
-        copy(self, "*", src=self.build_folder, dst=self.package_folder, keep_path=True)
+        copy(self, "*", src=self.build_folder,
+             dst=self.package_folder, keep_path=True)
 
         # Copy the CMake toolchain file to resources directory
         resource_dir = os.path.join(self.package_folder, "res")
-        copy(self, "toolchain.cmake", src=self.source_folder, dst=resource_dir, keep_path=False)
+        copy(self, "toolchain.cmake", src=self.source_folder,
+             dst=resource_dir, keep_path=False)
 
-    def inject_c_cxx_and_link_flags(self):
+    def add_common_flags(self):
         c_flags = []
         cxx_flags = []
         exelinkflags = []
@@ -111,10 +112,6 @@ class LLVMToolchainPackage(ConanFile):
             cxx_flags.append("-flto")
             exelinkflags.append("-flto")
 
-            if self.options.fat_lto:
-                c_flags.append("-ffat-lto-objects")
-                cxx_flags.append("-ffat-lto-objects")
-
         if self.options.function_sections:
             c_flags.append("-ffunction-sections")
             cxx_flags.append("-ffunction-sections")
@@ -123,8 +120,22 @@ class LLVMToolchainPackage(ConanFile):
             c_flags.append("-fdata-sections")
             cxx_flags.append("-fdata-sections")
 
-        if self.options.gc_sections:
-            exelinkflags.append("-Wl,--gc-sections")
+        self.conf_info.append("tools.build:cflags", c_flags)
+        self.conf_info.append("tools.build:cxxflags", cxx_flags)
+        self.conf_info.append("tools.build:exelinkflags", exelinkflags)
+
+    def setup_arm_cortex_m(self):
+        # Configure CMake for cross-compilation
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Generic")
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_processor", "ARM")
+
+        # Make the CMake toolchain file available
+        toolchain_file = Path(self.package_folder) / "res" / "toolchain.cmake"
+        self.conf_info.append(
+            "tools.cmake.cmaketoolchain:user_toolchain", toolchain_file)
+        self.output.info(f"Toolchain file: {toolchain_file}")
 
         # Architecture-specific flags for ARM Cortex-M
         ARCH_MAP = {
@@ -210,6 +221,10 @@ class LLVMToolchainPackage(ConanFile):
             },
         }
 
+        c_flags = []
+        cxx_flags = []
+        exelinkflags = []
+
         if (self.options.default_arch and self.settings_target and
                 self.settings_target.get_safe('arch') in ARCH_MAP):
             arch_config = ARCH_MAP[self.settings_target.get_safe('arch')]
@@ -247,47 +262,39 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
 
+    def setup_mac_osx(self):
+        import subprocess
+        try:
+            self.cpp_info.libdirs = []
+            sdk_path = subprocess.check_output(["xcrun", "--show-sdk-path"],
+                                               stderr=subprocess.STDOUT).decode().strip()
+            INCLUDE_SYS_ROOT = [f"-isysroot {sdk_path}"]
+            self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
+            self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
+            self.conf_info.append("tools.build:exelinkflags", INCLUDE_SYS_ROOT)
+            self.conf_info.append(
+                "tools.build:sharedlinkflags", INCLUDE_SYS_ROOT)
+            self.output.info(f"INCLUDE_SYS_ROOT:{INCLUDE_SYS_ROOT}")
+            if self.options.gc_sections:
+                self.conf_info.append(
+                    "tools.build:exelinkflags", ["-Wl,-dead_strip"])
+        except Exception as e:
+            self.output.warn(f"Could not determine macOS SDK path: {e}")
+
     def package_info(self):
-        self.cpp_info.includedirs = []
-
-        # Add LLVM bin directory to PATH
-        bin_folder = os.path.join(self.package_folder, "bin")
-        self.cpp_info.bindirs = [bin_folder]
-
-        # Add LLVM library path for runtime dependencies (needed for compiler to run)
-        lib_folder = os.path.join(self.package_folder, "lib")
-        if platform.system() == "Darwin":
-            self.buildenv_info.append_path("DYLD_LIBRARY_PATH", lib_folder)
-        else:
-            self.buildenv_info.append_path("LD_LIBRARY_PATH", lib_folder)
-
-        # Configure CMake for cross-compilation
-        self.conf_info.define("tools.cmake.cmaketoolchain:system_name", "Generic")
-        self.conf_info.define("tools.cmake.cmaketoolchain:system_processor", "ARM")
         self.conf_info.define("tools.build:compiler_executables", {
             "c": "clang",
             "cpp": "clang++",
             "asm": "clang",
         })
-
-        # Set environment variable for LLVM installation directory
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
-
-        # Make the CMake toolchain file available
-        toolchain_file = os.path.join(self.package_folder, "res", "toolchain.cmake")
-        self.conf_info.append("tools.cmake.cmaketoolchain:user_toolchain", toolchain_file)
-
-        self.output.info(f"LLVM bindir: {bin_folder}")
-        self.output.info(f"LLVM libdir: {lib_folder}")
-        self.output.info(f"Toolchain file: {toolchain_file}")
-
-        # Inject compiler and linker flags
-        self.inject_c_cxx_and_link_flags()
+        self.add_common_flags()
+        if self.settings.os == "Macos":
+            self.setup_mac_osx()
 
     def package_id(self):
         del self.info.options.default_arch
         del self.info.options.lto
-        del self.info.options.fat_lto
         del self.info.options.function_sections
         del self.info.options.data_sections
         del self.info.options.gc_sections

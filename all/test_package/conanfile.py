@@ -2,7 +2,7 @@ import os
 
 from conan import ConanFile
 from conan.tools.cmake import CMake, cmake_layout
-from conan.tools.build import can_run
+from conan.tools.build import cross_building
 
 
 class TestPackageConan(ConanFile):
@@ -17,15 +17,21 @@ class TestPackageConan(ConanFile):
         cmake_layout(self)
 
     def build(self):
-        # Dump all environment variables
-        self.output.info("=== ENVIRONMENT VARIABLES ===")
-        for key, value in sorted(os.environ.items()):
-            self.output.info(f"ENV: {key} = {value}")
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
 
     def test(self):
-        if can_run(self):
-            cmd = os.path.join(self.cpp.build.bindir, "test_package")
-            self.run(cmd, env="conanrun")
+        # For cross-compilation toolchains, we just verify the binary was created
+        # We cannot run ARM binaries on x86/ARM macOS/Linux/Windows hosts
+        if cross_building(self):
+            self.output.info(
+                "Cross-compilation successful! Binary created for target architecture.")
+            binary_path = os.path.join(
+                self.cpp.build.bindirs[0], "test_package")
+            if not os.path.exists(binary_path):
+                raise Exception(f"Expected binary not found at: {binary_path}")
+            self.output.success(f"Test binary exists at: {binary_path}")
+        else:
+            bin_path = os.path.join(self.cpp.build.bindirs[0], "test_package")
+            self.run(bin_path, env="conanrun")
