@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: 📥 Install CMake & Conan
-        run: pip3 install conan==2.16.1
+        run: pipx install conan==2.16.1
 
       - name: 📡 Add `libhal` conan remote
         run: |
