@@ -12,7 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, macos-12, windows-2022]
+        os: [macos-12]
+        # os: [ubuntu-22.04, macos-12, windows-2022]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -47,28 +48,28 @@ jobs:
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
         working-directory: demo
-        run: VERBOSE=1 conan build . -pr arm-gcc-${{ inputs.version }} -pr profile
+        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr profile
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
-        run: conan build . -pr arm-gcc-${{ inputs.version }} -pr profile
+        run: conan build . -pr clang-${{ inputs.version }} -pr profile
 
-      - name: 📡 Sign into JFrog Artifactory
-        if: ${{ github.ref == 'refs/heads/main' && runner.os != 'Windows' }}
-        env:
-          PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
-          JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
-        run: conan remote login -p $PASSWORD libhal $JFROG_USER
+      # - name: 📡 Sign into JFrog Artifactory
+      #   if: ${{ github.ref == 'refs/heads/main' && runner.os != 'Windows' }}
+      #   env:
+      #     PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
+      #     JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
+      #   run: conan remote login -p $PASSWORD libhal $JFROG_USER
 
-      - name: 📡 Sign into JFrog Artifactory (Powershell)
-        if: ${{ github.ref == 'refs/heads/main' && runner.os == 'Windows' }}
-        env:
-          PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
-          JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
-        run: conan remote login -p $env:PASSWORD libhal $env:JFROG_USER
+      # - name: 📡 Sign into JFrog Artifactory (Powershell)
+      #   if: ${{ github.ref == 'refs/heads/main' && runner.os == 'Windows' }}
+      #   env:
+      #     PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
+      #     JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
+      #   run: conan remote login -p $env:PASSWORD libhal $env:JFROG_USER
 
-      - name: 🆙 Upload package to `libhal` repo
-        if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-22.04' }}
-        run: |
-          conan upload "arm-gnu-toolchain/*" --only-recipe --confirm -r=libhal
+      # - name: 🆙 Upload package to `libhal` repo
+      #   if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-22.04' }}
+      #   run: |
+      #     conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal

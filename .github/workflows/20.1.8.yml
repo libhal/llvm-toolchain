@@ -1,0 +1,12 @@
+name: 🚀 20.1.8 Deploy
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: "20.1.8"
+    secrets: inherit

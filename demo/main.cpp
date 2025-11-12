@@ -1,8 +1,8 @@
-#include <stdio.h>
+#include <print>
 
 int
 main()
 {
-  printf("Hello, World\n");
+  std::println("Hello, World");
   return 0;
 }
