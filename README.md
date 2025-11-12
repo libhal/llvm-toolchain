@@ -1,8 +1,8 @@
-# LLVM Toolchain Repo
+# LLVM Toolchain Conan Packagegit
 
 A Conan tool package for the LLVM Toolchain (`clang`, `clang++`, `lld`). By adding
-this tool package to your Conan build profile, your project will be cross-compiled
-using the LLVM toolchain for embedded ARM Cortex-M targets.
+this tool package to your Conan build profile, your project can leverage the LLVM
+toolchain for modern C++ development.
 
 ## ✨ Key Features
 
@@ -16,29 +16,15 @@ using the LLVM toolchain for embedded ARM Cortex-M targets.
 
 - **LLVM 20.1.8** - Includes C++20 modules support (recommended)
 
-## 🎯 Supported Architectures
+## 💻 Supported Host Platforms
 
-- cortex-m0
-- cortex-m0plus
-- cortex-m1
-- cortex-m3
-- cortex-m4
-- cortex-m4f
-- cortex-m7
-- cortex-m7f
-- cortex-m7d
-- cortex-m23
-- cortex-m33
-- cortex-m33f
-- cortex-m35pf
-- cortex-m55
-- cortex-m85
+Currently, this toolchain package is only supported on:
+
+- **macOS 14** (Apple Silicon / ARM64)
+- **macOS 15** (Apple Silicon / ARM64)
 
 > [!NOTE]
-> The architecture names may have trailing characters indicating floating point support:
->
-> - `f` indicates single precision (32-bit) hard float
-> - `d` indicates double precision (64-bit) hard float
+> Support for Linux (x86_64, ARM64) and macOS Intel is planned for future releases.
 
 All binaries are downloaded from the official
 [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases).
@@ -54,22 +40,10 @@ conan config install -sf conan/profiles/v1 -tf profiles https://github.com/libha
 
 This provides profiles accessible via `-pr clang-20`. These profiles only include
 compiler information. You'll need a "target" profile to actually build something.
-The target profile must include `os=baremetal` and `arch` set to a valid architecture.
 
-Add the following to a profile named `target_profile`:
-
-```jinja2
-[settings]
-build_type=MinSizeRel
-arch=cortex-m4f
-os=baremetal
-```
-
-Now build your application using LLVM 20 for Cortex-M4F with MinSizeRel optimization:
-
-```bash
-conan build path/to/application -pr clang-20 -pr ./target_profile
-```
+> [!NOTE]
+> Cross-compilation target support (such as ARM Cortex-M) is currently in development.
+> See the [Future Target Support](#-future-target-support) section for planned architectures.
 
 ## 🔗 Adding as a Dependency
 
@@ -90,6 +64,30 @@ llvm-toolchain/20.1.8
 By adding `llvm-toolchain/20.1.8` to your profile, every dependency will use this
 toolchain for compilation. The tool package should NOT be directly added to an
 application's `conanfile.py`.
+
+Note that the profile above is missing the following settings:
+
+- `os`
+- `build_type`
+- `arch`
+
+For example, for an Release build on an M1 (ARM CPU) Mac, you'd use the following profile:
+
+```plaintext
+[settings]
+arch=armv8
+build_type=Release
+os=Macos
+```
+
+For x86_64 Linux:
+
+```plaintext
+[settings]
+arch=x86_64
+build_type=Release
+os=Linux
+```
 
 ## 🧾 Using Pre-made Profiles
 
@@ -123,8 +121,10 @@ conan create . --version 20.1.8
 Automatically inject appropriate `-target`, `-mcpu`, and `-mfloat-abi` flags for
 the `arch` defined in your build target profile.
 
-For `cortex-m4`: `-target armv7em-none-eabi -mcpu=cortex-m4 -mfloat-abi=soft`
-For `cortex-m4f`: `-target armv7em-none-eabihf -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16`
+Example (for future ARM Cortex-M support):
+
+- For `cortex-m4`: `-target armv7em-none-eabi -mcpu=cortex-m4 -mfloat-abi=soft`
+- For `cortex-m4f`: `-target armv7em-none-eabihf -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16`
 
 ### `lto` (Default: `True`)
 
@@ -148,3 +148,29 @@ garbage collection at link time.
 ### `gc_sections` (Default: `True`)
 
 Enable `--gc-sections` linker flag for garbage collection of unused sections.
+
+## 🔮 Future Target Support
+
+The following embedded ARM Cortex-M architectures are planned for future support:
+
+- cortex-m0
+- cortex-m0plus
+- cortex-m1
+- cortex-m3
+- cortex-m4
+- cortex-m4f
+- cortex-m7
+- cortex-m7f
+- cortex-m7d
+- cortex-m23
+- cortex-m33
+- cortex-m33f
+- cortex-m35pf
+- cortex-m55
+- cortex-m85
+
+> [!NOTE]
+> The architecture names may have trailing characters indicating floating point support:
+>
+> - `f` indicates single precision (32-bit) hard float
+> - `d` indicates double precision (64-bit) hard float
