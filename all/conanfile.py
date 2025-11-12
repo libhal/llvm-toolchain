@@ -268,13 +268,15 @@ class LLVMToolchainPackage(ConanFile):
             self.cpp_info.libdirs = []
             sdk_path = subprocess.check_output(["xcrun", "--show-sdk-path"],
                                                stderr=subprocess.STDOUT).decode().strip()
-            INCLUDE_SYS_ROOT = [f"-isysroot {sdk_path}"]
+            INCLUDE_SYS_ROOT = f"-isysroot {sdk_path}"
+            LINK_FLAGS = ["-fuse-ld=lld", INCLUDE_SYS_ROOT]
+
             self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
             self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
-            self.conf_info.append("tools.build:exelinkflags", INCLUDE_SYS_ROOT)
+            self.conf_info.append("tools.build:exelinkflags", LINK_FLAGS)
             self.conf_info.append(
-                "tools.build:sharedlinkflags", INCLUDE_SYS_ROOT)
-            self.output.info(f"INCLUDE_SYS_ROOT:{INCLUDE_SYS_ROOT}")
+                "tools.build:sharedlinkflags", LINK_FLAGS)
+            self.output.info(f"LINK_FLAGS={LINK_FLAGS}")
             if self.options.gc_sections:
                 self.conf_info.append(
                     "tools.build:exelinkflags", ["-Wl,-dead_strip"])
