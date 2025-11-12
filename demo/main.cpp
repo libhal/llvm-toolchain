@@ -1,8 +1,9 @@
-#include <stdio.h>
+#include <print>
 
 int
 main()
 {
-  printf("Hello, World\n");
+  std::println("LLVM Toolchain Demo!");
+  std::println("👋 Hello, 🌐 World");
   return 0;
 }

@@ -268,13 +268,29 @@ class LLVMToolchainPackage(ConanFile):
             self.cpp_info.libdirs = []
             sdk_path = subprocess.check_output(["xcrun", "--show-sdk-path"],
                                                stderr=subprocess.STDOUT).decode().strip()
-            INCLUDE_SYS_ROOT = [f"-isysroot {sdk_path}"]
+
+            # Get LLVM's library path
+            llvm_lib_path = os.path.join(self.package_folder, "lib")
+
+            INCLUDE_SYS_ROOT = f"-isysroot {sdk_path}"
+
+            # Link flags: use lld, set sysroot, add LLVM lib path, and set rpath
+            LINK_FLAGS = [
+                "-fuse-ld=lld",
+                INCLUDE_SYS_ROOT,
+                # Search LLVM's lib directory first
+                f"-L{llvm_lib_path}",
+                "-lc++abi",
+                f"-Wl,-rpath,{llvm_lib_path}",
+            ]
+
             self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
             self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
-            self.conf_info.append("tools.build:exelinkflags", INCLUDE_SYS_ROOT)
-            self.conf_info.append(
-                "tools.build:sharedlinkflags", INCLUDE_SYS_ROOT)
-            self.output.info(f"INCLUDE_SYS_ROOT:{INCLUDE_SYS_ROOT}")
+            self.conf_info.append("tools.build:exelinkflags", LINK_FLAGS)
+            self.conf_info.append("tools.build:sharedlinkflags", LINK_FLAGS)
+
+            self.output.info(f"LINK_FLAGS={LINK_FLAGS}")
+
             if self.options.gc_sections:
                 self.conf_info.append(
                     "tools.build:exelinkflags", ["-Wl,-dead_strip"])

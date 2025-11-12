@@ -1,0 +1,13 @@
+name: ✅ CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci_20_1_8:
+    uses: ./.github/workflows/20.1.8.yml
+    secrets: inherit
