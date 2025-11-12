@@ -13,14 +13,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            demo_profile: mac_arm
-
           - os: macos-15
             demo_profile: mac_arm
 
-          - os: macos-15-intel
-            demo_profile: mac_x86_64
+          # # ==================================================================
+          # # Uncomment Later
+          # # ==================================================================
+          #
+          # - os: macos-14
+          #   demo_profile: mac_arm
+          #
+          # - os: macos-15-intel
+          #   demo_profile: mac_x86_64
 
     runs-on: ${{ matrix.os }}
     steps:
