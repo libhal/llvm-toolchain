@@ -19,15 +19,15 @@ jobs:
           - os: macos-14
             demo_profile: mac_arm
 
-          - os: ubuntu-24.04-arm
-            demo_profile: linux_arm
-
-          - os: ubuntu-24.04
-            demo_profile: linux_x86_64
-
           # # ==================================================================
           # # Uncomment Later
           # # ==================================================================
+          #
+          # - os: ubuntu-24.04-arm
+          #   demo_profile: linux_arm
+
+          # - os: ubuntu-24.04
+          #   demo_profile: linux_x86_64
           #
           # - os: macos-15-intel
           #   demo_profile: mac_x86_64
@@ -71,6 +71,10 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
         run: conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }}
+
+      - name: ▶️ Run Demo
+        working-directory: demo
+        run: demo/build/Release/demo
 
       - name: 📡 Sign into JFrog Artifactory
         if: ${{ github.ref == 'refs/heads/main' && runner.os != 'Windows' }}
