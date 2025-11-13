@@ -56,7 +56,7 @@ class LLVMToolchainPackage(ConanFile):
         supported_build_architectures = {
             "Linux": ["armv8", "x86_64"],
             "Macos": ["armv8", "x86_64"],
-            "Windows": ["x86_64"],
+            "Windows": ["armv8", "x86_64"],
         }
 
         if (
@@ -283,13 +283,19 @@ class LLVMToolchainPackage(ConanFile):
         for flag in EXELINKFLAGS:
             self.conf_info.append("tools.build:exelinkflags", flag)
 
+    def setup_windows(self):
+        self.conf_info.remove("tools.build:cxxflags", "-stdlib=libc++")
+        self.conf_info.remove("tools.build:exelinkflags", "-stdlib=libc++")
+
     def setup_mac_osx(self):
         import subprocess
         try:
             self.cpp_info.libdirs = []
-            sdk_path = subprocess.check_output(["xcrun", "--show-sdk-path"],
-                                               stderr=subprocess.STDOUT).decode().strip()
-            INCLUDE_SYS_ROOT = f"-isysroot {sdk_path} "
+            SDK_PATH_FULL = subprocess.check_output(
+                ["xcrun", "--show-sdk-path"],
+                stderr=subprocess.STDOUT)
+            SDK_PATH = SDK_PATH_FULL.decode().strip()
+            INCLUDE_SYS_ROOT = f"-isysroot {SDK_PATH} "
             LINK_FLAGS = [
                 INCLUDE_SYS_ROOT,
                 f"-L{str(self._llvm_lib_path)} ",
@@ -320,6 +326,8 @@ class LLVMToolchainPackage(ConanFile):
             self.setup_mac_osx()
         if self.settings.os == "Linux":
             self.setup_linux()
+        if self.settings.os == "Windows":
+            self.setup_windows()
 
     def package_id(self):
         del self.info.options.default_arch

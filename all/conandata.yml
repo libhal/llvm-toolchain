@@ -18,26 +18,3 @@ sources:
       "armv8":
         url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-aarch64-pc-windows-msvc.tar.xz"
         sha256: "0df3e81e8fe26370dd2b60b9e009d81cd130d3fdc41b257434aa663c5d9f0c13"
-
-  "19.1.7":
-    "Windows":
-      "x86_64":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-win64.exe"
-        sha256: "placeholder_sha256_to_be_calculated"
-      "x86":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-win32.exe"
-        sha256: "placeholder_sha256_to_be_calculated"
-    "Linux":
-      "x86_64":
-        url: ""
-        sha256: "placeholder_sha256_to_be_calculated"
-      "armv8":
-        url: ""
-        sha256: "placeholder_sha256_to_be_calculated"
-    "Macos":
-      "x86_64":
-        url: ""
-        sha256: "placeholder_sha256_to_be_calculated"
-      "armv8":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-macOS-ARM64.tar.xz"
-        sha256: "d93bf12952d89fe4ec7501c40475718b722407da6a8d651f05c995863468e570"
