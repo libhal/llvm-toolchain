@@ -4,8 +4,11 @@ on:
   workflow_call:
     inputs:
       version:
-        required: true
         type: string
+        required: true
+      upload:
+        type: boolean
+        required: true
 
 jobs:
   deploy:
@@ -19,15 +22,16 @@ jobs:
           - os: macos-14
             demo_profile: mac_arm
 
+          - os: ubuntu-24.04-arm
+            demo_profile: linux_arm
+
+          - os: ubuntu-24.04
+            demo_profile: linux_x86_64
+
           # # ==================================================================
           # # Uncomment Later
           # # ==================================================================
           #
-          # - os: ubuntu-24.04-arm
-          #   demo_profile: linux_arm
-
-          # - os: ubuntu-24.04
-          #   demo_profile: linux_x86_64
           #
           # - os: macos-15-intel
           #   demo_profile: mac_x86_64
@@ -76,20 +80,13 @@ jobs:
         run: demo/build/Release/demo
 
       - name: 📡 Sign into JFrog Artifactory
-        if: ${{ github.ref == 'refs/heads/main' && runner.os != 'Windows' }}
+        if: ${{ github.ref == 'refs/heads/main' && runner.os == 'ubuntu-22.04' && inputs.upload == true }}
         env:
           PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
           JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
         run: conan remote login -p $PASSWORD libhal $JFROG_USER
 
-      - name: 📡 Sign into JFrog Artifactory (Powershell)
-        if: ${{ github.ref == 'refs/heads/main' && runner.os == 'Windows' }}
-        env:
-          PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
-          JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
-        run: conan remote login -p $env:PASSWORD libhal $env:JFROG_USER
-
-      - name: 🆙 Upload package to Conan Package Repo
-        if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-22.04' }}
-        run: |
-          conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal
+      # - name: 🆙 Upload package to Conan Package Repo
+      #   if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-22.04' && inputs.upload == true }}
+      #   run: |
+      #     conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal
