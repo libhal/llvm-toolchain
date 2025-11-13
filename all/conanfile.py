@@ -75,7 +75,11 @@ class LLVMToolchainPackage(ConanFile):
         pass
 
     def build(self):
-        # Get download URL and hash from conandata.yml based on version, OS and arch
+        pass
+
+    def package(self):
+        # Get download URL and hash from conandata.yml based on version, OS and
+        # arch
         os_name = str(self._settings_build.os)
         arch_name = str(self._settings_build.arch)
 
@@ -89,11 +93,7 @@ class LLVMToolchainPackage(ConanFile):
         # Download and extract the LLVM binary package
         # All platforms use tar.xz archives now
         get(self, url, sha256=sha256, strip_root=True,
-            destination=self.build_folder)
-
-    def package(self):
-        os.rename(self.build_folder, self.package_folder)
-        os.mkdir(self.build_folder)
+            destination=self.package_folder)
 
     def setup_arm_cortex_m(self):
         # Configure CMake for cross-compilation
