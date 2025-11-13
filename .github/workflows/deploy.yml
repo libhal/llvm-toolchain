@@ -16,17 +16,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15
-            demo_profile: mac_arm
+          # - os: macos-15
+          #   demo_profile: mac_arm
 
-          - os: macos-14
-            demo_profile: mac_arm
+          # - os: macos-14
+          #   demo_profile: mac_arm
 
           - os: ubuntu-24.04-arm
             demo_profile: linux_arm
 
-          - os: ubuntu-24.04
-            demo_profile: linux_x86_64
+          # - os: ubuntu-24.04
+          #   demo_profile: linux_x86_64
 
           # # ==================================================================
           # # Uncomment Later
@@ -74,7 +74,7 @@ jobs:
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
-        run: conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }}
+        run: conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: ▶️ Run Demo
         run: demo/build/Release/demo
