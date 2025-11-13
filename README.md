@@ -116,6 +116,17 @@ conan create . --version 20.1.8
 
 ## 🎛️ Options
 
+Example profile options:
+
+```plaintext
+[options]
+llvm-toolchain/*:default_arch=False
+llvm-toolchain/*:lto=True
+llvm-toolchain/*:data_sections=True
+llvm-toolchain/*:function_sections=True
+llvm-toolchain/*:gc_sections=True
+```
+
 ### `default_arch` (Default: `True`)
 
 Automatically inject appropriate `-target`, `-mcpu`, and `-mfloat-abi` flags for
@@ -129,11 +140,6 @@ Example (for future ARM Cortex-M support):
 ### `lto` (Default: `True`)
 
 Enable Link-Time Optimization with `-flto`.
-
-### `fat_lto` (Default: `True`)
-
-Enable `-ffat-lto-objects` for compatibility with linkers without LTO support.
-Ignored if `lto` is `False`.
 
 ### `function_sections` (Default: `True`)
 
