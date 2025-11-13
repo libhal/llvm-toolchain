@@ -7,7 +7,7 @@ class Demo(ConanFile):
     generators = "CMakeDeps", "CMakeToolchain", "VirtualBuildEnv"
 
     def build_requirements(self):
-        self.tool_requires("cmake/3.27.1")
+        self.tool_requires("cmake/4.1.2")
 
     def requirements(self):
         pass

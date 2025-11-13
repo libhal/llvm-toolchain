@@ -13,7 +13,6 @@ class LLVMToolchainPackage(ConanFile):
     description = "LLVM Toolchain for cross-compilation targeting various architectures"
     settings = "os", "arch", "compiler", "build_type"
     package_type = "application"
-    exports_sources = "toolchain.cmake"
     build_policy = "missing"
     short_paths = True
 
@@ -76,7 +75,11 @@ class LLVMToolchainPackage(ConanFile):
         pass
 
     def build(self):
-        # Get download URL and hash from conandata.yml based on version, OS and arch
+        pass
+
+    def package(self):
+        # Get download URL and hash from conandata.yml based on version, OS and
+        # arch
         os_name = str(self._settings_build.os)
         arch_name = str(self._settings_build.arch)
 
@@ -90,39 +93,7 @@ class LLVMToolchainPackage(ConanFile):
         # Download and extract the LLVM binary package
         # All platforms use tar.xz archives now
         get(self, url, sha256=sha256, strip_root=True,
-            destination=self.build_folder)
-
-    def package(self):
-        # Copy all LLVM files from build to package folder
-        copy(self, "*", src=self.build_folder,
-             dst=self.package_folder, keep_path=True)
-
-        # Copy the CMake toolchain file to resources directory
-        resource_dir = os.path.join(self.package_folder, "res")
-        copy(self, "toolchain.cmake", src=self.source_folder,
-             dst=resource_dir, keep_path=False)
-
-    def add_common_flags(self):
-        c_flags = []
-        cxx_flags = []
-        exelinkflags = []
-
-        if self.options.lto:
-            c_flags.append("-flto")
-            cxx_flags.append("-flto")
-            exelinkflags.append("-flto")
-
-        if self.options.function_sections:
-            c_flags.append("-ffunction-sections")
-            cxx_flags.append("-ffunction-sections")
-
-        if self.options.data_sections:
-            c_flags.append("-fdata-sections")
-            cxx_flags.append("-fdata-sections")
-
-        self.conf_info.append("tools.build:cflags", c_flags)
-        self.conf_info.append("tools.build:cxxflags", cxx_flags)
-        self.conf_info.append("tools.build:exelinkflags", exelinkflags)
+            destination=self.package_folder)
 
     def setup_arm_cortex_m(self):
         # Configure CMake for cross-compilation
@@ -262,38 +233,78 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
 
+    @property
+    def _llvm_lib_path(self) -> Path:
+        return Path(self.package_folder) / "lib"
+
+    def add_common_flags(self):
+        c_flags = []
+        cxx_flags = []
+        exelinkflags = ["-fuse-ld=lld "]
+
+        if self.options.lto:
+            c_flags.append("-flto ")
+            cxx_flags.append("-flto ")
+            exelinkflags.append("-flto ")
+
+        if self.options.function_sections:
+            c_flags.append("-ffunction-sections ")
+            cxx_flags.append("-ffunction-sections ")
+
+        if self.options.data_sections:
+            c_flags.append("-fdata-sections ")
+            cxx_flags.append("-fdata-sections ")
+
+        if self.options.gc_sections:
+            if self.settings.os == "Macos":
+                exelinkflags.append("-Wl,-dead_strip ")
+            else:
+                exelinkflags.append("-Wl,--gc-sections ")
+
+        self.conf_info.append("tools.build:cflags", c_flags)
+        self.conf_info.append("tools.build:cxxflags", cxx_flags)
+        self.conf_info.append("tools.build:exelinkflags", exelinkflags)
+
+    def setup_linux(self):
+        self.cpp_info.libdirs = []
+
+        library_path = ""
+        if self.settings.arch == "x86_64":
+            library_path = self._llvm_lib_path / "x86_64-unknown-linux-gnu"
+        elif self.settings.arch == "armv8":
+            library_path = self._llvm_lib_path / "aarch64-unknown-linux-gnu"
+
+        EXELINKFLAGS = [
+            "-lc++abi "
+            f"-Wl,-rpath,{str(library_path)} "
+            f"-L{str(library_path)} ",
+        ]
+
+        for flag in EXELINKFLAGS:
+            self.conf_info.append("tools.build:exelinkflags", flag)
+
     def setup_mac_osx(self):
         import subprocess
         try:
             self.cpp_info.libdirs = []
             sdk_path = subprocess.check_output(["xcrun", "--show-sdk-path"],
                                                stderr=subprocess.STDOUT).decode().strip()
-
-            # Get LLVM's library path
-            llvm_lib_path = os.path.join(self.package_folder, "lib")
-
-            INCLUDE_SYS_ROOT = f"-isysroot {sdk_path}"
-
-            # Link flags: use lld, set sysroot, add LLVM lib path, and set rpath
+            INCLUDE_SYS_ROOT = f"-isysroot {sdk_path} "
             LINK_FLAGS = [
-                "-fuse-ld=lld",
                 INCLUDE_SYS_ROOT,
-                # Search LLVM's lib directory first
-                f"-L{llvm_lib_path}",
-                "-lc++abi",
-                f"-Wl,-rpath,{llvm_lib_path}",
+                f"-L{str(self._llvm_lib_path)} ",
+                "-lc++abi ",
+                f"-Wl,-rpath,{str(self._llvm_lib_path)} ",
             ]
 
             self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
             self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
-            self.conf_info.append("tools.build:exelinkflags", LINK_FLAGS)
-            self.conf_info.append("tools.build:sharedlinkflags", LINK_FLAGS)
+
+            for flag in LINK_FLAGS:
+                self.conf_info.append("tools.build:exelinkflags", flag)
+                self.conf_info.append("tools.build:sharedlinkflags", flag)
 
             self.output.info(f"LINK_FLAGS={LINK_FLAGS}")
-
-            if self.options.gc_sections:
-                self.conf_info.append(
-                    "tools.build:exelinkflags", ["-Wl,-dead_strip"])
         except Exception as e:
             self.output.warn(f"Could not determine macOS SDK path: {e}")
 
@@ -307,6 +318,8 @@ class LLVMToolchainPackage(ConanFile):
         self.add_common_flags()
         if self.settings.os == "Macos":
             self.setup_mac_osx()
+        if self.settings.os == "Linux":
+            self.setup_linux()
 
     def package_id(self):
         del self.info.options.default_arch
