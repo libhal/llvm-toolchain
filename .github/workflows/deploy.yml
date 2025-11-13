@@ -69,7 +69,7 @@ jobs:
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
         working-directory: demo
-        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }}
+        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
