@@ -43,13 +43,13 @@ jobs:
   #     os: macos-15
   #     demo_profile: mac_arm
 
-  deploy-macos-15-intel:
-    uses: ./.github/workflows/deploy.yml
-    with:
-      version: "19.1.7"
-      upload: ${{ inputs.upload }}
-      os: macos-15-intel
-      demo_profile: mac_x86_64
+  # deploy-macos-15-intel:
+  #   uses: ./.github/workflows/deploy.yml
+  #   with:
+  #     version: "19.1.7"
+  #     upload: ${{ inputs.upload }}
+  #     os: macos-15-intel
+  #     demo_profile: mac_x86_64
 
   deploy-windows-x86_64:
     uses: ./.github/workflows/deploy.yml
