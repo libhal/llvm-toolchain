@@ -284,8 +284,7 @@ class LLVMToolchainPackage(ConanFile):
             self.conf_info.append("tools.build:exelinkflags", flag)
 
     def setup_windows(self):
-        self.conf_info.remove("tools.build:cxxflags", "-stdlib=libc++")
-        self.conf_info.remove("tools.build:exelinkflags", "-stdlib=libc++")
+        self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
     def setup_mac_osx(self):
         import subprocess
