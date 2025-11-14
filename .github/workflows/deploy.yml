@@ -9,32 +9,19 @@ on:
       upload:
         type: boolean
         required: true
+      os:
+        type: string
+        required: true
+      demo_profile:
+        type: string
+        required: true
 
 jobs:
   deploy:
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: macos-15
-            demo_profile: mac_arm
 
-          - os: macos-14
-            demo_profile: mac_arm
-
-          - os: ubuntu-24.04-arm
-            demo_profile: linux_arm
-
-          - os: ubuntu-24.04
-            demo_profile: linux_x86_64
-
-          - os: windows-latest
-            demo_profile: windows_x86_64
-
-          - os: windows-11-arm
-            demo_profile: windows_arm
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.os }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -67,12 +54,12 @@ jobs:
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
         working-directory: demo
-        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
-        run: conan build . -pr clang-${{ inputs.version }} -pr ${{ matrix.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: conan build . -pr clang-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: ▶️ Run Demo
         run: demo/build/Release/demo
@@ -85,6 +72,6 @@ jobs:
         run: conan remote login -p $PASSWORD libhal $JFROG_USER
 
       # - name: 🆙 Upload package to Conan Package Repo
-      #   if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-22.04' && inputs.upload == true }}
+      #   if: ${{ github.ref == 'refs/heads/main' && inputs.os == 'ubuntu-22.04' && inputs.upload == true }}
       #   run: |
       #     conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal
