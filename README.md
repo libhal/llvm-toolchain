@@ -1,4 +1,4 @@
-# LLVM Toolchain Conan Packagegit
+# LLVM Toolchain Conan Package
 
 A Conan tool package for the LLVM Toolchain (`clang`, `clang++`, `lld`). By
 adding this tool package to your Conan build profile, your project can leverage
@@ -16,18 +16,19 @@ the LLVM toolchain for modern C++ development.
 
 ## 📋 Supported Versions
 
-- **LLVM 20.1.8** - Includes C++20 modules support (recommended)
+- **LLVM 20.1.8**
 
 ## 💻 Supported Host Platforms
 
-Currently, this toolchain package is only supported on:
+This toolchain package supports the following host platforms:
 
-- **macOS 14** (Apple Silicon / ARM64)
-- **macOS 15** (Apple Silicon / ARM64)
+- **Linux** (x86_64, ARM64)
+- **macOS** (Apple Silicon / ARM64)
+- **Windows** (x86_64, ARM64)
 
 > [!NOTE]
-> Support for Linux (x86_64, ARM64) and macOS Intel is planned for future
-> releases.
+> macOS Intel (x86_64) is not currently supported as LLVM does not provide
+> official pre-built binaries for this platform.
 
 All binaries are downloaded from the official
 [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases).
@@ -93,6 +94,15 @@ For x86_64 Linux:
 arch=x86_64
 build_type=Release
 os=Linux
+```
+
+For x86_64 Windows:
+
+```plaintext
+[settings]
+arch=x86_64
+build_type=Release
+os=Windows
 ```
 
 ## 🧾 Using Pre-made Profiles
@@ -169,10 +179,6 @@ garbage collection at link time.
 Enable `--gc-sections` linker flag for garbage collection of unused sections.
 
 ## 🔮 Future Target Support
-
-### Windows
-
-We plan to add support for windows binaries when we get a chance.
 
 ### ARM Cortex-M
 
