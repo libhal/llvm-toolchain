@@ -32,8 +32,10 @@ All binaries are downloaded from the official
 | Platform | x86_64 | ARM64 |
 | -------- | ------ | ----- |
 | Linux    | ✅      | ✅     |
-| macOS    | ✅      | ✅     |
+| macOS    | ⚠️¹    | ⚠️¹    |
 | Windows  | ✅      | ❌     |
+
+¹ *Binaries available but cause segmentation faults when running demos*
 
 ## 🚀 Quick Start
 
