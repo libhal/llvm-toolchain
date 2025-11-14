@@ -14,24 +14,26 @@ the LLVM toolchain for modern C++ development.
 - **Integrated tooling**: Includes clang-tidy, clang-format, and other
   development tools
 
-## 📋 Supported Versions
-
-- **LLVM 20.1.8**
-
-## 💻 Supported Host Platforms
-
-This toolchain package supports the following host platforms:
-
-- **Linux** (x86_64, ARM64)
-- **macOS** (Apple Silicon / ARM64)
-- **Windows** (x86_64, ARM64)
-
-> [!NOTE]
-> macOS Intel (x86_64) is not currently supported as LLVM does not provide
-> official pre-built binaries for this platform.
+## 📋 Supported Versions & Host Platforms
 
 All binaries are downloaded from the official
 [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases).
+
+### LLVM 20.1.8
+
+| Platform | x86_64 | ARM64 |
+| -------- | ------ | ----- |
+| Linux    | ✅      | ✅     |
+| macOS    | ❌      | ✅     |
+| Windows  | ✅      | ✅     |
+
+### LLVM 19.1.7
+
+| Platform | x86_64 | ARM64 |
+| -------- | ------ | ----- |
+| Linux    | ✅      | ✅     |
+| macOS    | ✅      | ✅     |
+| Windows  | ✅      | ❌     |
 
 ## 🚀 Quick Start
 
@@ -206,3 +208,114 @@ support:
 >
 > - `f` indicates single precision (32-bit) hard float
 > - `d` indicates double precision (64-bit) hard float
+
+## 🤝 Contributing
+
+### Adding a New LLVM Version
+
+To add support for a new LLVM version to this package, follow these steps:
+
+#### 1. Download Official Binaries
+
+Download the official LLVM prebuilt binaries from the [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases) page. Look for the release tagged as `llvmorg-X.X.X` and download the appropriate archives for each supported platform:
+
+- **Linux x86_64**: `LLVM-X.X.X-Linux-X64.tar.xz` or `clang+llvm-X.X.X-x86_64-linux-gnu-*.tar.xz`
+- **Linux ARM64**: `LLVM-X.X.X-Linux-ARM64.tar.xz` or `clang+llvm-X.X.X-aarch64-linux-gnu.tar.xz`
+- **macOS x86_64**: `LLVM-X.X.X-macOS-X64.tar.xz` (if available)
+- **macOS ARM64**: `LLVM-X.X.X-macOS-ARM64.tar.xz`
+- **Windows x86_64**: `clang+llvm-X.X.X-x86_64-pc-windows-msvc.tar.xz`
+- **Windows ARM64**: `clang+llvm-X.X.X-aarch64-pc-windows-msvc.tar.xz` (if available)
+
+> [!NOTE]
+> Not all platforms may be available for every LLVM version. Only download what's officially provided.
+
+#### 2. Calculate SHA256 Checksums
+
+Calculate the SHA256 checksums for all downloaded archives:
+
+```bash
+cd /path/to/downloaded/archives
+shasum -a 256 *.tar.xz
+```
+
+Save these checksums - you'll need them for the next step.
+
+#### 3. Update `conandata.yml`
+
+Add a new version entry to [`all/conandata.yml`](all/conandata.yml) with the URLs and SHA256 checksums:
+
+```yaml
+sources:
+  "X.X.X":
+    "Linux":
+      "x86_64":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-Linux-X64.tar.xz"
+        sha256: "<checksum>"
+      "armv8":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/clang+llvm-X.X.X-aarch64-linux-gnu.tar.xz"
+        sha256: "<checksum>"
+    "Macos":
+      "armv8":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-macOS-ARM64.tar.xz"
+        sha256: "<checksum>"
+    "Windows":
+      "x86_64":
+        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/clang+llvm-X.X.X-x86_64-pc-windows-msvc.tar.xz"
+        sha256: "<checksum>"
+```
+
+Only include platforms that have official prebuilt binaries available.
+
+#### 4. Update README.md
+
+Add the new version to the [Supported Versions & Host Platforms](#-supported-versions--host-platforms) section in this README:
+
+```markdown
+### LLVM X.X.X
+
+| Platform | x86_64 | ARM64 |
+| -------- | ------ | ----- |
+| Linux    | ✅      | ✅     |
+| macOS    | ❌      | ✅     |
+| Windows  | ✅      | ✅     |
+```
+
+Use ✅ for supported platforms and ❌ for unsupported ones.
+
+#### 5. Test the Package
+
+Build and test the package locally:
+
+```bash
+conan create all --version X.X.X
+```
+
+This downloads the binaries, verifies checksums, and creates the package.
+
+#### 6. Build and Run the Demo
+
+Install the toolchain profiles and build the demo application:
+
+```bash
+# Install toolchain profiles
+conan config install -tf profiles/ -sf conan/profiles/v1/ .
+
+# Build the demo (use the version you're adding)
+conan build demo -pr clang-X.X.X -pr linux-x86_64 \
+  --build=missing -c tools.build:skip_test=True
+
+# Run the demo to verify it works
+./demo/build/Release/demo
+```
+
+> [!NOTE]
+> Replace `linux-x86_64` with your platform's profile. Available
+> profiles are in the `conan/profiles/v1/` directory.
+
+#### 7. Submit a Pull Request
+
+Once you've verified everything works:
+
+1. Commit your changes to `all/conandata.yml` and `README.md`
+2. Submit a pull request with a clear description of the version being added
+3. Include any platform-specific notes or limitations

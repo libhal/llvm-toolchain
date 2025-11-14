@@ -9,9 +9,51 @@ on:
         default: true
 
 jobs:
-  deploy:
+  deploy-linux-x86_64:
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit # for upload
+    with:
+      version: "20.1.8"
+      upload: ${{ inputs.upload }}
+      os: ubuntu-24.04
+      demo_profile: linux_x86_64
+
+  deploy-linux-arm:
     uses: ./.github/workflows/deploy.yml
     with:
       version: "20.1.8"
       upload: ${{ inputs.upload }}
-    secrets: inherit
+      os: ubuntu-24.04-arm
+      demo_profile: linux_arm
+
+  deploy-macos-14-arm:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: "20.1.8"
+      upload: ${{ inputs.upload }}
+      os: macos-14
+      demo_profile: mac_arm
+
+  deploy-macos-15-arm:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: "20.1.8"
+      upload: ${{ inputs.upload }}
+      os: macos-15
+      demo_profile: mac_arm
+
+  deploy-windows-x86_64:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: "20.1.8"
+      upload: ${{ inputs.upload }}
+      os: windows-latest
+      demo_profile: windows_x86_64
+
+  deploy-windows-arm:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: "20.1.8"
+      upload: ${{ inputs.upload }}
+      os: windows-11-arm
+      demo_profile: windows_arm
