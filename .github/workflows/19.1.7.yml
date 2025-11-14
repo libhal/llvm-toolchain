@@ -26,21 +26,30 @@ jobs:
       os: ubuntu-24.04-arm
       demo_profile: linux_arm
 
-  deploy-macos-14-arm:
-    uses: ./.github/workflows/deploy.yml
-    with:
-      version: "19.1.7"
-      upload: ${{ inputs.upload }}
-      os: macos-14
-      demo_profile: mac_arm
+  # # Mac ARM Removed due to segmentation faults when executing demo
+  # deploy-macos-14-arm:
+  #   uses: ./.github/workflows/deploy.yml
+  #   with:
+  #     version: "19.1.7"
+  #     upload: ${{ inputs.upload }}
+  #     os: macos-14
+  #     demo_profile: mac_arm
 
-  deploy-macos-15-arm:
+  # deploy-macos-15-arm:
+  #   uses: ./.github/workflows/deploy.yml
+  #   with:
+  #     version: "19.1.7"
+  #     upload: ${{ inputs.upload }}
+  #     os: macos-15
+  #     demo_profile: mac_arm
+
+  deploy-macos-15-intel:
     uses: ./.github/workflows/deploy.yml
     with:
       version: "19.1.7"
       upload: ${{ inputs.upload }}
-      os: macos-15
-      demo_profile: mac_arm
+      os: macos-15-intel
+      demo_profile: mac_x86_64
 
   deploy-windows-x86_64:
     uses: ./.github/workflows/deploy.yml
@@ -49,11 +58,3 @@ jobs:
       upload: ${{ inputs.upload }}
       os: windows-latest
       demo_profile: windows_x86_64
-
-  deploy-windows-arm:
-    uses: ./.github/workflows/deploy.yml
-    with:
-      version: "19.1.7"
-      upload: ${{ inputs.upload }}
-      os: windows-11-arm
-      demo_profile: windows_arm
