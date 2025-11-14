@@ -258,8 +258,10 @@ class LLVMToolchainPackage(ConanFile):
         if self.options.gc_sections:
             if self.settings.os == "Macos":
                 exelinkflags.append("-Wl,-dead_strip ")
-            else:
+            elif self.settings.os == "Linux":
                 exelinkflags.append("-Wl,--gc-sections ")
+            else:
+                pass  # LLVM will apply gc-sections automatically for Windows
 
         self.conf_info.append("tools.build:cflags", c_flags)
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
