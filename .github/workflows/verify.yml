@@ -1,0 +1,78 @@
+#!/usr/bin/python
+#
+# Copyright 2024 - 2025 Khalil Estell and the libhal contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 🔍 Verify
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      os:
+        type: string
+        required: true
+      demo_profile:
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    strategy:
+      fail-fast: false
+
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: 📥 Install CMake & Conan
+        run: pipx install conan>=2.18.0
+
+      - name: 📡 Add `libhal` conan remote
+        run: |
+          conan remote add libhal https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
+
+      - name: 📡 Create and setup default profile
+        run: conan profile detect --force
+
+      - name: 👁️‍🗨️ Show conan profile
+        run: conan profile show
+
+      - name: 📡 Install libhal settings_user.yml
+        run: conan config install -sf profiles/baremetal/v2/ https://github.com/libhal/conan-config.git
+
+      - name: 📡 Install toolchain profiles
+        run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
+
+      - name: 📦 Create Conan Package
+        working-directory: all
+        run: conan create . --version=${{ inputs.version }}
+
+      - name: 📦 Build Demos Conan Package
+        if: ${{ runner.os != 'Windows' }}
+        working-directory: demo
+        run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+
+      - name: 📦 Build Demos Conan Package
+        if: ${{ runner.os == 'Windows' }}
+        working-directory: demo
+        run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+
+      - name: ▶️ Run Demo
+        run: demo/build/Release/demo

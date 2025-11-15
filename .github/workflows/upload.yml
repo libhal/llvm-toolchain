@@ -1,0 +1,54 @@
+#!/usr/bin/python
+#
+# Copyright 2024 - 2025 Khalil Estell and the libhal contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 🚀 Upload
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+
+jobs:
+  upload-package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: 📥 Install Conan
+        run: pipx install conan>=2.18.0
+
+      - name: 📡 Add `libhal` conan remote
+        run: |
+          conan remote add libhal https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
+
+      - name: 📡 Create and setup default profile
+        run: conan profile detect --force
+
+      - name: 📦 Export Conan Recipe (no build)
+        working-directory: all
+        run: conan export . --version=${{ inputs.version }}
+
+      - name: 📡 Sign into JFrog Artifactory
+        env:
+          PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
+          JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
+        run: conan remote login -p $PASSWORD libhal $JFROG_USER
+
+      - name: 🆙 Upload package to Conan Package Repo
+        run: |
+          conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal
