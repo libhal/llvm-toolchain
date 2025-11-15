@@ -18,6 +18,7 @@ from pathlib import Path
 from conan import ConanFile
 from conan.tools.files import get
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.apple import XCRun
 
 
 class LLVMToolchainPackage(ConanFile):
@@ -54,15 +55,11 @@ class LLVMToolchainPackage(ConanFile):
         "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled."
     }
 
-    @property
-    def _settings_build(self):
-        return getattr(self, "settings_build", self.settings)
-
     def validate(self):
         supported_build_operating_systems = ["Linux", "Macos", "Windows"]
-        if not self._settings_build.os in supported_build_operating_systems:
+        if not self.settings_build.os in supported_build_operating_systems:
             raise ConanInvalidConfiguration(
-                f"The build os '{self._settings_build.os}' is not supported. "
+                f"The build os '{self.settings_build.os}' is not supported. "
                 "Pre-compiled binaries are only available for "
                 f"{supported_build_operating_systems}."
             )
@@ -74,13 +71,13 @@ class LLVMToolchainPackage(ConanFile):
         }
 
         if (
-            not self._settings_build.arch
-            in supported_build_architectures[str(self._settings_build.os)]
+            not self.settings_build.arch
+            in supported_build_architectures[str(self.settings_build.os)]
         ):
-            build_os = str(self._settings_build.os)
+            build_os = str(self.settings_build.os)
             raise ConanInvalidConfiguration(
-                f"The build architecture '{self._settings_build.arch}' "
-                f"is not supported for {self._settings_build.os}. "
+                f"The build architecture '{self.settings_build.arch}' "
+                f"is not supported for {self.settings_build.os}. "
                 "Pre-compiled binaries are only available for "
                 f"{supported_build_architectures[build_os]}."
             )
@@ -94,15 +91,15 @@ class LLVMToolchainPackage(ConanFile):
     def package(self):
         # Get download URL and hash from conandata.yml based on version, OS and
         # arch
-        os_name = str(self._settings_build.os)
-        arch_name = str(self._settings_build.arch)
+        OS_NAME = str(self.settings_build.os)
+        ARCH_NAME = str(self.settings_build.arch)
 
         try:
-            url = self.conan_data["sources"][self.version][os_name][arch_name]["url"]
-            sha256 = self.conan_data["sources"][self.version][os_name][arch_name]["sha256"]
+            url = self.conan_data["sources"][self.version][OS_NAME][ARCH_NAME]["url"]
+            sha256 = self.conan_data["sources"][self.version][OS_NAME][ARCH_NAME]["sha256"]
         except KeyError:
             raise ConanInvalidConfiguration(
-                f"Binary package for LLVM {self.version} not available for {os_name}/{arch_name}")
+                f"Binary package for LLVM {self.version} not available for {OS_NAME}/{ARCH_NAME}")
 
         # Download and extract the LLVM binary package
         # All platforms use tar.xz archives now
@@ -115,12 +112,6 @@ class LLVMToolchainPackage(ConanFile):
             "tools.cmake.cmaketoolchain:system_name", "Generic")
         self.conf_info.define(
             "tools.cmake.cmaketoolchain:system_processor", "ARM")
-
-        # Make the CMake toolchain file available
-        toolchain_file = Path(self.package_folder) / "res" / "toolchain.cmake"
-        self.conf_info.append(
-            "tools.cmake.cmaketoolchain:user_toolchain", toolchain_file)
-        self.output.info(f"Toolchain file: {toolchain_file}")
 
         # Architecture-specific flags for ARM Cortex-M
         ARCH_MAP = {
@@ -212,29 +203,29 @@ class LLVMToolchainPackage(ConanFile):
 
         if (self.options.default_arch and self.settings_target and
                 self.settings_target.get_safe('arch') in ARCH_MAP):
-            arch_config = ARCH_MAP[self.settings_target.get_safe('arch')]
+            ARCH_CONFIG = ARCH_MAP[self.settings_target.get_safe('arch')]
 
             # Add target triple
-            target_flag = f"-target {arch_config['target']}"
+            target_flag = f"-target {ARCH_CONFIG['target']}"
             c_flags.append(target_flag)
             cxx_flags.append(target_flag)
             exelinkflags.append(target_flag)
 
             # Add CPU specification
-            cpu_flag = f"-mcpu={arch_config['cpu']}"
+            cpu_flag = f"-mcpu={ARCH_CONFIG['cpu']}"
             c_flags.append(cpu_flag)
             cxx_flags.append(cpu_flag)
             exelinkflags.append(cpu_flag)
 
             # Add float ABI
-            float_flag = f"-mfloat-abi={arch_config['float_abi']}"
+            float_flag = f"-mfloat-abi={ARCH_CONFIG['float_abi']}"
             c_flags.append(float_flag)
             cxx_flags.append(float_flag)
             exelinkflags.append(float_flag)
 
             # Add FPU if specified
-            if "fpu" in arch_config:
-                fpu_flag = f"-mfpu={arch_config['fpu']}"
+            if "fpu" in ARCH_CONFIG:
+                fpu_flag = f"-mfpu={ARCH_CONFIG['fpu']}"
                 c_flags.append(fpu_flag)
                 cxx_flags.append(fpu_flag)
                 exelinkflags.append(fpu_flag)
@@ -300,26 +291,31 @@ class LLVMToolchainPackage(ConanFile):
             self.conf_info.append("tools.build:exelinkflags", flag)
 
     def setup_windows(self):
+        # This may look a bit odd but the gnu:disable_flag instructs Conan
+        # to ignore the host profile's libcxx settings with regards to the
+        # generated conan_toolchain.cmake file.
+        #
+        # If this is removed, then building with this the `-std=libc++` flag
+        # will result in a warning from the compiler about the argument being
+        # unused.
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
     def setup_mac_osx(self):
-        import subprocess
         try:
+            # Disable's conan's default library directory since we will be
+            # setting those arguments directly.
             self.cpp_info.libdirs = []
-            SDK_PATH_FULL = subprocess.check_output(
-                ["xcrun", "--show-sdk-path"],
-                stderr=subprocess.STDOUT)
-            SDK_PATH = SDK_PATH_FULL.decode().strip()
-            INCLUDE_SYS_ROOT = f"-isysroot {SDK_PATH} "
+
+            INCLUDE_SYS_ROOT = f"-isysroot {XCRun(self).sdk_path} "
+            self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
+            self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
+
             LINK_FLAGS = [
                 INCLUDE_SYS_ROOT,
                 f"-L{str(self._llvm_lib_path)} ",
                 "-lc++abi ",
                 f"-Wl,-rpath,{str(self._llvm_lib_path)} ",
             ]
-
-            self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
-            self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
 
             for flag in LINK_FLAGS:
                 self.conf_info.append("tools.build:exelinkflags", flag)
@@ -345,8 +341,14 @@ class LLVMToolchainPackage(ConanFile):
             self.setup_windows()
 
     def package_id(self):
+        # All options should be removed as none of them should impact the
+        # package id hash. These options are only used for delivering command
+        # line arguments via the package_info.
         del self.info.options.default_arch
         del self.info.options.lto
         del self.info.options.function_sections
         del self.info.options.data_sections
         del self.info.options.gc_sections
+        # Remove any compiler or build_type settings from recipe hash
+        del self.info.settings.compiler
+        del self.info.settings.build_type
