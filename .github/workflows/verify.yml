@@ -67,12 +67,12 @@ jobs:
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
         working-directory: demo
-        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
-        run: conan build . -pr clang-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: ▶️ Run Demo
         run: demo/build/Release/demo
