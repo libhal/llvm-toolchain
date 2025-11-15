@@ -79,7 +79,7 @@ jobs:
       - verify-linux-x86_64
       - verify-linux-arm
       - verify-windows-x86_64
-    if: ${{ github.ref == 'refs/heads/main' && inputs.upload == true }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') && inputs.upload == true }}
     uses: ./.github/workflows/upload.yml
     secrets: inherit
     with:
