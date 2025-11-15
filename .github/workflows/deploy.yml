@@ -1,77 +1,18 @@
-name: 🚀 deploy
+name: 🚀 Deploy
 
 on:
-  workflow_call:
-    inputs:
-      version:
-        type: string
-        required: true
-      upload:
-        type: boolean
-        required: true
-      os:
-        type: string
-        required: true
-      demo_profile:
-        type: string
-        required: true
+  workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
-  deploy:
-    strategy:
-      fail-fast: false
-
-    runs-on: ${{ inputs.os }}
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
-
-      - name: 📥 Install CMake & Conan
-        run: pipx install conan>=2.18.0
-
-      - name: 📡 Add `libhal` conan remote
-        run: |
-          conan remote add libhal https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
-
-      - name: 📡 Create and setup default profile
-        run: conan profile detect --force
-
-      - name: 👁️‍🗨️ Show conan profile
-        run: conan profile show
-
-      - name: 📡 Install libhal settings_user.yml
-        run: conan config install -sf profiles/baremetal/v2/ https://github.com/libhal/conan-config.git
-
-      - name: 📡 Install toolchain profiles
-        run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
-
-      - name: 📦 Create Conan Package
-        working-directory: all
-        run: conan create . --version=${{ inputs.version }}
-
-      - name: 📦 Build Demos Conan Package
-        if: ${{ runner.os != 'Windows' }}
-        working-directory: demo
-        run: VERBOSE=1 conan build . -pr clang-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
-
-      - name: 📦 Build Demos Conan Package
-        if: ${{ runner.os == 'Windows' }}
-        working-directory: demo
-        run: conan build . -pr clang-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
-
-      - name: ▶️ Run Demo
-        run: demo/build/Release/demo
-
-      - name: 📡 Sign into JFrog Artifactory
-        if: ${{ github.ref == 'refs/heads/main' && runner.os == 'ubuntu-22.04' && inputs.upload == true }}
-        env:
-          PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
-          JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
-        run: conan remote login -p $PASSWORD libhal $JFROG_USER
-
-      # - name: 🆙 Upload package to Conan Package Repo
-      #   if: ${{ github.ref == 'refs/heads/main' && inputs.os == 'ubuntu-22.04' && inputs.upload == true }}
-      #   run: |
-      #     conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal
+  ci_20_1_8:
+    uses: ./.github/workflows/20.1.8.yml
+    with:
+      upload: true
+    secrets: inherit
+  ci_19_1_7:
+    uses: ./.github/workflows/19.1.7.yml
+    with:
+      upload: true
+    secrets: inherit

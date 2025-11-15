@@ -1,0 +1,38 @@
+name: 🚀 Upload
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+
+jobs:
+  upload-package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: 📥 Install Conan
+        run: pipx install conan>=2.18.0
+
+      - name: 📡 Add `libhal` conan remote
+        run: |
+          conan remote add libhal https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
+
+      - name: 📡 Create and setup default profile
+        run: conan profile detect --force
+
+      - name: 📦 Export Conan Recipe (no build)
+        working-directory: all
+        run: conan export . --version=${{ inputs.version }}
+
+      - name: 📡 Sign into JFrog Artifactory
+        env:
+          PASSWORD: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN }}
+          JFROG_USER: ${{ secrets.JFROG_LIBHAL_TRUNK_ID_TOKEN_USER }}
+        run: conan remote login -p $PASSWORD libhal $JFROG_USER
+
+      - name: 🆙 Upload package to Conan Package Repo
+        run: |
+          conan upload "llvm-toolchain/*" --only-recipe --confirm -r=libhal

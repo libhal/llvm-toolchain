@@ -32,7 +32,7 @@ All binaries are downloaded from the official
 | Platform | x86_64 | ARM64 |
 | -------- | ------ | ----- |
 | Linux    | ✅      | ✅     |
-| macOS    | ⚠️¹    | ⚠️¹    |
+| macOS    | ⚠️¹     | ⚠️¹    |
 | Windows  | ✅      | ❌     |
 
 ¹ *Binaries available but cause segmentation faults when running demos*
@@ -46,7 +46,7 @@ profiles to your local `conan2` cache:
 conan config install -sf conan/profiles/v1 -tf profiles https://github.com/libhal/llvm-toolchain.git
 ```
 
-This provides profiles accessible via `-pr clang-20`. These profiles only
+This provides profiles accessible via `-pr llvm-20.1.8`. These profiles only
 include compiler information. You'll need a "target" profile to actually build
 something.
 
@@ -211,6 +211,25 @@ support:
 > - `f` indicates single precision (32-bit) hard float
 > - `d` indicates double precision (64-bit) hard float
 
+## 🔖 Interpreting Versions
+
+The "Release" version represents the version of the `conanfile.py` and its
+`conandata.yml`. Versions follow [SEMVER 2](https://semver.org/).
+
+1. Patch version increments if:
+   1. A non-feature change or fix has been applied to the conan recipe
+2. Minor version increments if:
+   1. A new option is made available via the recipe
+   2. New versions of LLVM made available within `conandata.yml`
+3. Major number increments if:
+   1. An option is removed
+   2. Command line arguments change in such a way as to not be a bug fix but to
+      seriously change the semantics of a program. An example would be to force
+   3. A toolchain file is
+      1. Removed
+      2. Added and enforced for all downstream users that meaningfully changes
+         the semantics or compilation of a program.
+
 ## 🤝 Contributing
 
 ### Adding a New LLVM Version
@@ -303,7 +322,7 @@ Install the toolchain profiles and build the demo application:
 conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
 # Build the demo (use the version you're adding)
-conan build demo -pr clang-X.X.X -pr linux-x86_64 \
+conan build demo -pr llvm-X.X.X -pr linux-x86_64 \
   --build=missing -c tools.build:skip_test=True
 
 # Run the demo to verify it works
