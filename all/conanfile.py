@@ -305,6 +305,13 @@ class LLVMToolchainPackage(ConanFile):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
 
+        # Provide path to LLVM's libraries for dynamic runtime
+        LINK_FLAGS = [f"-Wl,-rpath,{str(self._lib_path)} "]
+
+        for flag in LINK_FLAGS:
+            self.conf_info.append("tools.build:exelinkflags", flag)
+            self.conf_info.append("tools.build:sharedlinkflags", flag)
+
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
             "c": "clang",
