@@ -30,7 +30,6 @@ on:
 jobs:
   verify-linux-x86_64:
     uses: ./.github/workflows/verify.yml
-    if: ${{ false }}
     with:
       version: ${{ inputs.VERSION }}
       os: ubuntu-24.04
@@ -38,18 +37,10 @@ jobs:
 
   verify-linux-arm:
     uses: ./.github/workflows/verify.yml
-    if: ${{ false }}
     with:
       version: ${{ inputs.VERSION }}
       os: ubuntu-24.04-arm
       demo_profile: linux_arm
-
-  verify-macos-14-arm:
-    uses: ./.github/workflows/verify.yml
-    with:
-      version: ${{ inputs.VERSION }}
-      os: macos-14
-      demo_profile: mac_arm
 
   verify-macos-15-arm:
     uses: ./.github/workflows/verify.yml
@@ -60,7 +51,6 @@ jobs:
 
   verify-windows-x86_64:
     uses: ./.github/workflows/verify.yml
-    if: ${{ false }}
     with:
       version: ${{ inputs.VERSION }}
       os: windows-latest
@@ -68,7 +58,6 @@ jobs:
 
   verify-windows-arm:
     uses: ./.github/workflows/verify.yml
-    if: ${{ false }}
     with:
       version: ${{ inputs.VERSION }}
       os: windows-11-arm
@@ -78,7 +67,6 @@ jobs:
     needs:
       - verify-linux-x86_64
       - verify-linux-arm
-      - verify-macos-14-arm
       - verify-macos-15-arm
       - verify-windows-x86_64
       - verify-windows-arm
