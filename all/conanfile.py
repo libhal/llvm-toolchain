@@ -239,7 +239,7 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
 
     @property
-    def _llvm_lib_path(self) -> Path:
+    def _lib_path(self) -> Path:
         return Path(self.package_folder) / "lib"
 
     def add_common_flags(self):
@@ -277,14 +277,15 @@ class LLVMToolchainPackage(ConanFile):
 
         library_path = ""
         if self.settings.arch == "x86_64":
-            library_path = self._llvm_lib_path / "x86_64-unknown-linux-gnu"
+            library_path = self._lib_path / "x86_64-unknown-linux-gnu"
         elif self.settings.arch == "armv8":
-            library_path = self._llvm_lib_path / "aarch64-unknown-linux-gnu"
+            library_path = self._lib_path / "aarch64-unknown-linux-gnu"
 
         EXELINKFLAGS = [
-            "-lc++abi "
             f"-Wl,-rpath,{str(library_path)} "
             f"-L{str(library_path)} ",
+            "-lc++ "
+            "-lc++abi "
         ]
 
         for flag in EXELINKFLAGS:
@@ -301,29 +302,8 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
     def setup_mac_osx(self):
-        try:
-            # Disable's conan's default library directory since we will be
-            # setting those arguments directly.
-            self.cpp_info.libdirs = []
-
-            INCLUDE_SYS_ROOT = f"-isysroot {XCRun(self).sdk_path} "
-            self.conf_info.append("tools.build:cflags", INCLUDE_SYS_ROOT)
-            self.conf_info.append("tools.build:cxxflags", INCLUDE_SYS_ROOT)
-
-            LINK_FLAGS = [
-                INCLUDE_SYS_ROOT,
-                f"-L{str(self._llvm_lib_path)} ",
-                "-lc++abi ",
-                f"-Wl,-rpath,{str(self._llvm_lib_path)} ",
-            ]
-
-            for flag in LINK_FLAGS:
-                self.conf_info.append("tools.build:exelinkflags", flag)
-                self.conf_info.append("tools.build:sharedlinkflags", flag)
-
-            self.output.info(f"LINK_FLAGS={LINK_FLAGS}")
-        except Exception as e:
-            self.output.warn(f"Could not determine macOS SDK path: {e}")
+        # Disable Conan's automatic library directories
+        self.cpp_info.libdirs = []
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
@@ -331,7 +311,9 @@ class LLVMToolchainPackage(ConanFile):
             "cpp": "clang++",
             "asm": "clang",
         })
+
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
+
         self.add_common_flags()
         if self.settings.os == "Macos":
             self.setup_mac_osx()

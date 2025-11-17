@@ -30,7 +30,7 @@ on:
         required: true
 
 jobs:
-  deploy:
+  verify:
     strategy:
       fail-fast: false
 

@@ -27,6 +27,15 @@ All binaries are downloaded from the official
 | macOS    | ❌      | ✅     |
 | Windows  | ✅      | ✅     |
 
+> [!WARNING]
+> macOS Sonoma (14) and may produce this linker error:
+>
+> ```plaintext
+> ld64.lld: error: undefined symbol: std::__1::__is_posix_terminal(__sFILE*)
+> ```
+>
+> Or others when linking with this version of LLVM.
+
 ### LLVM 19.1.7
 
 | Platform | x86_64 | ARM64 |
@@ -35,7 +44,8 @@ All binaries are downloaded from the official
 | macOS    | ⚠️¹     | ⚠️¹    |
 | Windows  | ✅      | ❌     |
 
-¹ *Binaries available but cause segmentation faults when running demos*
+> [!WARNING]
+> ¹ *Binaries available but cause segmentation faults when running demos*
 
 ## 🚀 Quick Start
 
