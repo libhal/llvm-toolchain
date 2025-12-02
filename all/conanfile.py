@@ -88,23 +88,65 @@ class LLVMToolchainPackage(ConanFile):
     def build(self):
         pass
 
-    def package(self):
-        # Get download URL and hash from conandata.yml based on version, OS and
-        # arch
-        OS_NAME = str(self.settings_build.os)
-        ARCH_NAME = str(self.settings_build.arch)
+    def _determine_llvm_variant(self):
+        """Determine which LLVM variant to download based on target architecture"""
 
+        # If no cross-compilation, use regular LLVM
+        if not self.settings_target:
+            self.output.warning("settings target does not exist??")
+            return "host"
+
+        TARGET_OS = self.settings_target.get_safe("os")
+        TARGET_ARCH = self.settings_target.get_safe("arch")
+
+        self.output.warning(
+            f"TARGET_OS:{TARGET_OS}, TARGET_ARCH:{TARGET_ARCH}")
+
+        # ARM Cortex-M baremetal gets special ARM Embedded Toolchain
+        if TARGET_OS == "baremetal" and TARGET_ARCH in [
+            "cortex-m0", "cortex-m0plus", "cortex-m1",
+            "cortex-m3", "cortex-m4", "cortex-m4f",
+            "cortex-m7", "cortex-m7f", "cortex-m7d",
+            "cortex-m23", "cortex-m33", "cortex-m33f",
+            "cortex-m35p", "cortex-m35pf",
+            "cortex-m55", "cortex-m85",
+        ]:
+            return "arm-embedded"
+
+        # Everything else uses regular LLVM
+        # This includes:
+        # - RISC-V (riscv32, riscv64)
+        # - AVR (avr)
+        # - Other ARM variants (cortex-a, etc.)
+        # - Host builds
+        return "host"
+
+    def package(self):
+        VARIANT = self._determine_llvm_variant()
+        BUILD_OS = str(self.settings_build.os)
+        BUILD_ARCH = str(self.settings_build.arch)
+
+        self.output.info(f'VARIANT: {VARIANT}')
         try:
-            url = self.conan_data["sources"][self.version][OS_NAME][ARCH_NAME]["url"]
-            sha256 = self.conan_data["sources"][self.version][OS_NAME][ARCH_NAME]["sha256"]
+            # Special handling for variants
+            if VARIANT == "arm-embedded":
+                # ARM Embedded Toolchain uses "universal" for macOS
+                if BUILD_OS == "Macos":
+                    BUILD_ARCH = "universal"
+                URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
+                SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
+            else:
+                # Regular LLVM
+                URL = self.conan_data["sources"][self.version]["host"][BUILD_OS][BUILD_ARCH]["url"]
+                SHA256 = self.conan_data["sources"][self.version]["host"][BUILD_OS][BUILD_ARCH]["sha256"]
+
+            # Download and extract the LLVM binary package
+            # All platforms use tar.xz archives now
+            get(self, URL, sha256=SHA256, strip_root=True,
+                destination=self.package_folder)
         except KeyError:
             raise ConanInvalidConfiguration(
-                f"Binary package for LLVM {self.version} not available for {OS_NAME}/{ARCH_NAME}")
-
-        # Download and extract the LLVM binary package
-        # All platforms use tar.xz archives now
-        get(self, url, sha256=sha256, strip_root=True,
-            destination=self.package_folder)
+                f"Binary package for LLVM {self.version} not available for {BUILD_OS}/{BUILD_ARCH}")
 
     def setup_arm_cortex_m(self):
         # Configure CMake for cross-compilation
@@ -314,12 +356,16 @@ class LLVMToolchainPackage(ConanFile):
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
 
+        # ADD THIS: Call ARM setup when cross-compiling to ARM
+        if self.settings_target and self.settings_target.get_safe('os') == 'baremetal':
+            self.setup_arm_cortex_m()
+
         self.add_common_flags()
-        if self.settings.os == "Macos":
+        if self.settings_build.os == "Macos":
             self.setup_mac_osx()
-        if self.settings.os == "Linux":
+        if self.settings_build.os == "Linux":
             self.setup_linux()
-        if self.settings.os == "Windows":
+        if self.settings_build.os == "Windows":
             self.setup_windows()
 
     def package_id(self):

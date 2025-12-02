@@ -62,7 +62,7 @@ jobs:
 
       - name: 📦 Create Conan Package
         working-directory: all
-        run: conan create . --version=${{ inputs.version }}
+        run: conan create . --version=${{ inputs.version }} --build-require
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
