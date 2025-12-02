@@ -325,9 +325,9 @@ class LLVMToolchainPackage(ConanFile):
             cxx_flags.append("-fdata-sections ")
 
         if self.options.gc_sections:
-            if self.settings.os == "Macos":
+            if self.settings_target.os == "Macos":
                 exelinkflags.append("-Wl,-dead_strip ")
-            elif self.settings.os == "Linux":
+            elif self.settings_target.os != "Windows":
                 exelinkflags.append("-Wl,--gc-sections ")
             else:
                 pass  # LLVM will apply gc-sections automatically for Windows
@@ -374,6 +374,15 @@ class LLVMToolchainPackage(ConanFile):
             "c": "clang",
             "cpp": "clang++",
             "asm": "clang",
+        })
+
+        # Add CMake utility tools
+        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", {
+            "CMAKE_OBJCOPY": "llvm-objcopy",
+            "CMAKE_SIZE_UTIL": "llvm-size",
+            "CMAKE_OBJDUMP": "llvm-objdump",
+            "CMAKE_AR": "llvm-ar",
+            "CMAKE_RANLIB": "llvm-ranlib",
         })
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
