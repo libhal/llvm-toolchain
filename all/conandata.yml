@@ -44,10 +44,13 @@ sources:
         "armv8":
           url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Linux-AArch64.tar.xz"
           sha256: "21a35fb9d5ae7e2b8deec7e0fa32c06fb97b92f3afca2d22c2bda98d6de3d7d8"
-      "Macos":
-        "universal":
-          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Darwin-universal.tar.xz"
-          sha256: "7f9bb835f1f61a5c4e2766d90cd45e2dd0b8f0834a59c2aed5d67ba0c2b1cbcb"
+      "Macos": # x86_64 and armv8 are the same because the dmg its universal
+        "armv8":
+          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Darwin-universal.dmg"
+          sha256: "0451e67dc9a9066c17f746c26654962fa3889d4df468db1245d1bae69438eaf5"
+        "x86_64":
+          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Darwin-universal.dmg"
+          sha256: "0451e67dc9a9066c17f746c26654962fa3889d4df468db1245d1bae69438eaf5"
       "Windows":
         "x86_64":
           url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Windows-x86_64.zip"

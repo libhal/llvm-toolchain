@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import subprocess
 from pathlib import Path
 from conan import ConanFile
-from conan.tools.files import get
+from conan.tools.files import get, download, copy
 from conan.errors import ConanInvalidConfiguration
-from conan.tools.apple import XCRun
 
 
 class LLVMToolchainPackage(ConanFile):
@@ -121,29 +121,51 @@ class LLVMToolchainPackage(ConanFile):
         # - Host builds
         return "host"
 
+    def _extract_macos_dmg(self, url: str, sha256: str):
+        # Download and store  to source folder just for storage
+        LOCAL_DMG_FILE = Path(self.source_folder) / "llvm.dmg"
+        download(self, url, LOCAL_DMG_FILE)
+
+        # Mount the DMG file system onto the build folder
+        subprocess.run(
+            ["hdiutil", "attach", str(LOCAL_DMG_FILE), "-mountpoint",
+             self.build_folder, "-nobrowse", "-readonly", "-quiet"])
+
+        # Copy contents from LLVM directory to package folder
+        PATHS = Path(self.build_folder).glob("LLVM-*")
+        for path in PATHS:
+            self.output.warning(f"📁 COPYING Contents of {path}")
+            copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
+
+        # Detach DMG
+        subprocess.run(
+            ["hdiutil", "detach", self.build_folder, "-force", "-quiet"])
+
+        # Delete DMG file
+        Path(LOCAL_DMG_FILE).unlink()
+
+    def _extract(self, url: str, sha256: str):
+        if url.endswith(".dmg"):
+            self._extract_macos_dmg(url=url, sha256=sha256)
+            return
+
+        # Download and extract the LLVM binary package
+        # All platforms use tar.xz archives now
+        get(self, url, sha256=sha256, strip_root=True,
+            destination=self.package_folder)
+
     def package(self):
         VARIANT = self._determine_llvm_variant()
         BUILD_OS = str(self.settings_build.os)
         BUILD_ARCH = str(self.settings_build.arch)
 
-        self.output.info(f'VARIANT: {VARIANT}')
+        self.output.info(
+            f'VARIANT: {VARIANT}, BUILD_OS: {BUILD_OS}, BUILD_ARCH: {BUILD_ARCH}')
         try:
-            # Special handling for variants
-            if VARIANT == "arm-embedded":
-                # ARM Embedded Toolchain uses "universal" for macOS
-                if BUILD_OS == "Macos":
-                    BUILD_ARCH = "universal"
-                URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
-                SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
-            else:
-                # Regular LLVM
-                URL = self.conan_data["sources"][self.version]["host"][BUILD_OS][BUILD_ARCH]["url"]
-                SHA256 = self.conan_data["sources"][self.version]["host"][BUILD_OS][BUILD_ARCH]["sha256"]
+            URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
+            SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
-            # Download and extract the LLVM binary package
-            # All platforms use tar.xz archives now
-            get(self, URL, sha256=SHA256, strip_root=True,
-                destination=self.package_folder)
+            self._extract(URL, SHA256)
         except KeyError:
             raise ConanInvalidConfiguration(
                 f"Binary package for LLVM {self.version} not available for {BUILD_OS}/{BUILD_ARCH}")
