@@ -42,30 +42,29 @@ jobs:
       os: ubuntu-24.04-arm
       demo_profile: linux_arm
 
-  # # Mac ARM Removed due to segmentation faults when executing demo
-  # verify-macos-14-arm:
-  #   uses: ./.github/workflows/verify.yml
-  #   with:
-  #     version: ${{ inputs.VERSION }}
+  verify-macos-14-arm:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
 
-  #     os: macos-14
-  #     demo_profile: mac_arm
+      os: macos-14
+      demo_profile: mac_arm
 
-  # verify-macos-15-arm:
-  #   uses: ./.github/workflows/verify.yml
-  #   with:
-  #     version: ${{ inputs.VERSION }}
+  verify-macos-15-arm:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
 
-  #     os: macos-15
-  #     demo_profile: mac_arm
+      os: macos-15
+      demo_profile: mac_arm
 
-  # verify-macos-15-intel:
-  #   uses: ./.github/workflows/verify.yml
-  #   with:
-  #     version: ${{ inputs.VERSION }}
+  verify-macos-15-intel:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
 
-  #     os: macos-15-intel
-  #     demo_profile: mac_x86_64
+      os: macos-15-intel
+      demo_profile: mac_x86_64
 
   verify-windows-x86_64:
     uses: ./.github/workflows/verify.yml

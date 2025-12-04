@@ -34,3 +34,8 @@ jobs:
     with:
       upload: false
     secrets: inherit
+  ci_19_1_5:
+    uses: ./.github/workflows/19.1.5.yml
+    with:
+      upload: false
+    secrets: inherit

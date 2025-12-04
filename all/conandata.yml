@@ -36,6 +36,25 @@ sources:
           url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/clang+llvm-19.1.7-x86_64-pc-windows-msvc.tar.xz"
           sha256: "b4557b4f012161f56a2f5d9e877ab9635cafd7a08f7affe14829bd60c9d357f0"
   "19.1.5":
+    "host":
+      "Linux":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/LLVM-19.1.5-Linux-X64.tar.xz"
+          sha256: "4a5ec53951a584ed36f80240f6fbf8fdd46b4cf6c7ee87cc2d5018dc37caf679"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/clang+llvm-19.1.5-aarch64-linux-gnu.tar.xz"
+          sha256: "a73d9326e5d756e3937df6a9f621664d76403b59119f741901106b387e53a6ae"
+      "Macos":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/LLVM-19.1.5-macOS-X64.tar.xz"
+          sha256: "49405e75fbe7ad6f8139a33f59ec8c5112b75b3027405c7b92d19f4c6f02c78a"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/LLVM-19.1.5-macOS-ARM64.tar.xz"
+          sha256: "d93bf12952d89fe4ec7501c40475718b722407da6a8d651f05c995863468e570"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/clang+llvm-19.1.5-x86_64-pc-windows-msvc.tar.xz"
+          sha256: "b4557b4f012161f56a2f5d9e877ab9635cafd7a08f7affe14829bd60c9d357f0"
     "arm-embedded": # ARM LLVM Embedded Toolchain - ONLY for ARM Cortex-M
       "Linux":
         "x86_64":
