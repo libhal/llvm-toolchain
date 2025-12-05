@@ -27,6 +27,11 @@ jobs:
     with:
       upload: true
     secrets: inherit
+  ci_20_1_0:
+    uses: ./.github/workflows/20.1.0.yml
+    with:
+      upload: true
+    secrets: inherit
   ci_19_1_7:
     uses: ./.github/workflows/19.1.7.yml
     with:

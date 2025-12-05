@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m4f
+build_type=Release
+os=baremetal
