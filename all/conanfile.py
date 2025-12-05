@@ -264,6 +264,12 @@ class LLVMToolchainPackage(ConanFile):
         c_flags = []
         cxx_flags = []
         exelinkflags = []
+        definitions = [
+            # LLVM's libc++ implementation needs a definition for the threads
+            # API. Without this, the libc++ headers will emit a compile time
+            # "error" stating that the thread API must be defined.
+            "_LIBCPP_HAS_NO_THREADS=1"
+        ]
 
         if (self.options.default_arch and self.settings_target and
                 self.settings_target.get_safe('arch') in ARCH_MAP):
@@ -301,6 +307,7 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.build:cflags", c_flags)
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
+        self.conf_info.append("tools.build:defines", definitions)
 
     @property
     def _lib_path(self) -> Path:
