@@ -62,14 +62,14 @@ jobs:
 
       - name: 📦 Create Conan Package
         working-directory: all
-        run: conan create . -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.demo_profile }} --version=${{ inputs.version }} --build-require
+        run: conan create . -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.demo_profile }} --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
         working-directory: demo
-        run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
-        run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
