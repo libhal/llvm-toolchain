@@ -2,12 +2,15 @@
 
 A Conan tool package for the LLVM Toolchain (`clang`, `clang++`, `lld`). By
 adding this tool package to your Conan build profile, your project can leverage
-the LLVM toolchain for modern C++ development.
+the LLVM toolchain for modern C++ development across multiple platforms and
+architectures.
 
 ## ✨ Key Features
 
 - **Single cross-compiler**: LLVM can target multiple architectures with one
   toolchain
+- **Embedded ARM support**: Built-in support for ARM Cortex-M microcontrollers
+  using the ARM LLVM Embedded Toolchain
 - **Modules support**: LLVM 20+ includes full C++20 modules support
 - **Modern C++ standards**: Best-in-class support for C++20/23 features
 - **Better diagnostics**: Clear, actionable error messages
@@ -16,10 +19,12 @@ the LLVM toolchain for modern C++ development.
 
 ## 📋 Supported Versions & Host Platforms
 
-All binaries are downloaded from the official
-[LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases).
+All binaries are downloaded from official sources:
 
-### LLVM 20.1.8
+- Upstream LLVM from [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases)
+- ARM Cortex-M targets from [ARM LLVM Embedded Toolchain](https://github.com/arm/arm-toolchain/releases)
+
+### LLVM 20
 
 | Platform | x86_64 | ARM64 |
 | -------- | ------ | ----- |
@@ -27,25 +32,17 @@ All binaries are downloaded from the official
 | macOS    | ❌      | ✅     |
 | Windows  | ✅      | ✅     |
 
-> [!WARNING]
-> macOS Sonoma (14) and may produce this linker error:
+> [!IMPORTANT]
+> This package uses version "20" to represent the most recent official releases
+> from both upstream LLVM and the ARM LLVM Embedded Toolchain. However, the
+> exact version numbers differ:
 >
-> ```plaintext
-> ld64.lld: error: undefined symbol: std::__1::__is_posix_terminal(__sFILE*)
-> ```
+> - **Upstream LLVM**: Version 20.1.8 (for host platforms and non-Cortex-M targets)
+> - **ARM Embedded Toolchain**: Version 20.1.0 (for ARM Cortex-M baremetal targets)
 >
-> Or others when linking with this version of LLVM.
-
-### LLVM 19.1.7
-
-| Platform | x86_64 | ARM64 |
-| -------- | ------ | ----- |
-| Linux    | ✅      | ✅     |
-| macOS    | ⚠️¹     | ⚠️¹    |
-| Windows  | ✅      | ❌     |
-
-> [!WARNING]
-> ¹ *Binaries available but cause segmentation faults when running demos*
+> Both versions are the latest official releases available at the time of
+> packaging. The package automatically selects the appropriate variant based on
+> your target architecture.
 
 ## 🚀 Quick Start
 
@@ -56,14 +53,42 @@ profiles to your local `conan2` cache:
 conan config install -sf conan/profiles/v1 -tf profiles https://github.com/libhal/llvm-toolchain.git
 ```
 
-This provides profiles accessible via `-pr llvm-20.1.8`. These profiles only
+This provides profiles accessible via `-pr llvm-20`. These profiles only
 include compiler information. You'll need a "target" profile to actually build
 something.
 
-> [!NOTE]
-> Cross-compilation target support (such as ARM Cortex-M) is currently in
-> development. See the [Future Target Support](#-future-target-support) section
-> for planned architectures.
+### Host Platform Profiles
+
+For native development on your host platform:
+
+```bash
+# x86_64 Linux
+conan build . -pr llvm-20 -pr linux_x86_64
+
+# ARM64 Linux
+conan build . -pr llvm-20 -pr linux_arm
+
+# ARM64 macOS
+conan build . -pr llvm-20 -pr mac_arm
+
+# x86_64 Windows
+conan build . -pr llvm-20 -pr windows_x86_64
+```
+
+### ARM Cortex-M Profiles
+
+For embedded ARM Cortex-M development (cross-compilation):
+
+```bash
+# Cortex-M4 with hardware floating point
+conan build . -pr llvm-20 -pr cortex-m4f
+
+# Cortex-M7 with double-precision FPU
+conan build . -pr llvm-20 -pr cortex-m7d
+
+# Cortex-M33 with hardware floating point
+conan build . -pr llvm-20 -pr cortex-m33f
+```
 
 ## 🔗 Adding as a Dependency
 
@@ -78,10 +103,10 @@ compiler.libcxx=libc++
 compiler.version=20
 
 [tool_requires]
-llvm-toolchain/20.1.8
+llvm-toolchain/20
 ```
 
-By adding `llvm-toolchain/20.1.8` to your profile, every dependency will use
+By adding `llvm-toolchain/20` to your profile, every dependency will use
 this toolchain for compilation. The tool package should NOT be directly added
 to an application's `conanfile.py`.
 
@@ -91,8 +116,9 @@ Note that the profile above is missing the following settings:
 - `build_type`
 - `arch`
 
-For example, for an Release build on an M1 (ARM CPU) Mac, you'd use the
-following profile:
+### Host Platform Examples
+
+For a Release build on an M1 (ARM CPU) Mac:
 
 ```plaintext
 [settings]
@@ -119,6 +145,26 @@ build_type=Release
 os=Windows
 ```
 
+### ARM Cortex-M Examples
+
+For ARM Cortex-M4 with hardware floating point:
+
+```plaintext
+[settings]
+arch=cortex-m4f
+build_type=Release
+os=baremetal
+```
+
+For ARM Cortex-M7 with double-precision FPU:
+
+```plaintext
+[settings]
+arch=cortex-m7d
+build_type=Release
+os=baremetal
+```
+
 ## 🧾 Using Pre-made Profiles
 
 Install profiles into your local conan cache:
@@ -137,11 +183,16 @@ Profiles use `libc++` as the standard library (LLVM's C++ standard library imple
 
 ## 📦 Building & Installing the Tool Package
 
-When you create the package, it downloads the compiler from the official LLVM
-releases and stores it in your local Conan package cache:
+When you create the package, it downloads the appropriate compiler variant from
+the official releases based on your build and target settings, then stores it
+in your local Conan package cache:
 
 ```bash
-conan create . --version 20.1.8
+# For host platform development
+conan create . --version 20
+
+# For ARM Cortex-M cross-compilation (downloads ARM Embedded variant)
+conan create . -pr:b default -pr:h cortex-m4f -pr:h llvm-20 --version 20 --build-require
 ```
 
 ## 🎛️ Options
@@ -150,7 +201,8 @@ Example profile options:
 
 ```plaintext
 [options]
-llvm-toolchain/*:default_arch=False
+llvm-toolchain/*:default_arch=True
+llvm-toolchain/*:default_linker_script=True
 llvm-toolchain/*:lto=True
 llvm-toolchain/*:data_sections=True
 llvm-toolchain/*:function_sections=True
@@ -162,7 +214,7 @@ llvm-toolchain/*:gc_sections=True
 Automatically inject appropriate `-target`, `-mcpu`, and `-mfloat-abi` flags for
 the `arch` defined in your build target profile.
 
-Example (for future ARM Cortex-M support):
+Examples for ARM Cortex-M:
 
 - For `cortex-m4`:
   - `-target armv7em-none-eabi`
@@ -173,6 +225,18 @@ Example (for future ARM Cortex-M support):
   - `-mcpu=cortex-m4`
   - `-mfloat-abi=hard`
   - `-mfpu=fpv4-sp-d16`
+
+### `default_linker_script` (Default: `True`)
+
+Automatically specify the default linker script (`picolibcpp.ld`) to allow
+projects without a linker script to link without error. If you specify your own
+linker script(s) via the `-T` argument, the default linker script will be
+ignored and your supplied linker script(s) will be used.
+
+> [!NOTE]
+> Disabling this flag is not necessary when building applications with custom
+> linker scripts. Only use this if you have multiple custom linker scripts and
+> want to override the default linker script supplied by this toolchain.
 
 ### `lto` (Default: `True`)
 
@@ -192,12 +256,9 @@ garbage collection at link time.
 
 Enable `--gc-sections` linker flag for garbage collection of unused sections.
 
-## 🔮 Future Target Support
+## 🎯 Supported ARM Cortex-M Targets
 
-### ARM Cortex-M
-
-The following embedded ARM Cortex-M architectures are planned for future
-support:
+The following embedded ARM Cortex-M architectures are fully supported:
 
 - cortex-m0
 - cortex-m0plus
@@ -211,6 +272,7 @@ support:
 - cortex-m23
 - cortex-m33
 - cortex-m33f
+- cortex-m35p
 - cortex-m35pf
 - cortex-m55
 - cortex-m85
@@ -220,6 +282,17 @@ support:
 >
 > - `f` indicates single precision (32-bit) hard float
 > - `d` indicates double precision (64-bit) hard float
+
+These targets use the [ARM LLVM Embedded Toolchain](https://github.com/arm/arm-toolchain),
+which is specifically optimized for bare-metal ARM Cortex-M development and
+includes optimized C/C++ libraries for embedded systems.
+
+## 🔮 Future Target Support
+
+### Other Architectures
+
+Support for additional architectures (RISC-V, AVR, etc.) is planned. These will
+use the upstream LLVM toolchain. Contributions are welcome!
 
 ## 🔖 Interpreting Versions
 
@@ -234,11 +307,26 @@ The "Release" version represents the version of the `conanfile.py` and its
 3. Major number increments if:
    1. An option is removed
    2. Command line arguments change in such a way as to not be a bug fix but to
-      seriously change the semantics of a program. An example would be to force
-   3. A toolchain file is
+      seriously change the semantics of a program
+   3. A toolchain file is:
       1. Removed
       2. Added and enforced for all downstream users that meaningfully changes
-         the semantics or compilation of a program.
+         the semantics or compilation of a program
+
+### Version Transparency
+
+The package version (e.g., "20") represents a collection of related LLVM
+toolchain releases:
+
+- **Upstream LLVM**: Used for host platforms (Linux, macOS, Windows) and
+  non-Cortex-M cross-compilation targets. Currently version 20.1.8.
+- **ARM Embedded Toolchain**: Used for ARM Cortex-M baremetal targets.
+  Currently version 20.1.0.
+
+While these version numbers don't match exactly, both represent the latest
+official releases from their respective sources. The package automatically
+selects the appropriate variant based on your target architecture, ensuring you
+always get the correct toolchain for your build.
 
 ## 🤝 Contributing
 
@@ -250,12 +338,18 @@ To add support for a new LLVM version to this package, follow these steps:
 
 Download the official LLVM prebuilt binaries from the [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases) page. Look for the release tagged as `llvmorg-X.X.X` and download the appropriate archives for each supported platform:
 
-- **Linux x86_64**: `LLVM-X.X.X-Linux-X64.tar.xz` or `clang+llvm-X.X.X-x86_64-linux-gnu-*.tar.xz`
-- **Linux ARM64**: `LLVM-X.X.X-Linux-ARM64.tar.xz` or `clang+llvm-X.X.X-aarch64-linux-gnu.tar.xz`
-- **macOS x86_64**: `LLVM-X.X.X-macOS-X64.tar.xz` (if available)
+- **Linux x86_64**: `LLVM-X.X.X-Linux-X64.tar.xz`
+- **Linux ARM64**: `LLVM-X.X.X-Linux-ARM64.tar.xz`
 - **macOS ARM64**: `LLVM-X.X.X-macOS-ARM64.tar.xz`
 - **Windows x86_64**: `clang+llvm-X.X.X-x86_64-pc-windows-msvc.tar.xz`
 - **Windows ARM64**: `clang+llvm-X.X.X-aarch64-pc-windows-msvc.tar.xz` (if available)
+
+For ARM Cortex-M support, download from the [ARM Toolchain Releases](https://github.com/arm/arm-toolchain/releases):
+
+- **Linux x86_64**: `ATfE-X.X.X-Linux-x86_64.tar.xz`
+- **Linux ARM64**: `ATfE-X.X.X-Linux-AArch64.tar.xz`
+- **macOS Universal**: `ATfE-X.X.X-Darwin-universal.dmg`
+- **Windows x86_64**: `ATfE-X.X.X-Windows-x86_64.zip`
 
 > [!NOTE]
 > Not all platforms may be available for every LLVM version. Only download what's officially provided.
@@ -266,7 +360,7 @@ Calculate the SHA256 checksums for all downloaded archives:
 
 ```bash
 cd /path/to/downloaded/archives
-shasum -a 256 *.tar.xz
+shasum -a 256 *.tar.xz *.dmg *.zip
 ```
 
 Save these checksums - you'll need them for the next step.
@@ -277,48 +371,60 @@ Add a new version entry to [`all/conandata.yml`](all/conandata.yml) with the URL
 
 ```yaml
 sources:
-  "X.X.X":
-    "Linux":
-      "x86_64":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-Linux-X64.tar.xz"
-        sha256: "<checksum>"
-      "armv8":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/clang+llvm-X.X.X-aarch64-linux-gnu.tar.xz"
-        sha256: "<checksum>"
-    "Macos":
-      "armv8":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-macOS-ARM64.tar.xz"
-        sha256: "<checksum>"
-    "Windows":
-      "x86_64":
-        url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/clang+llvm-X.X.X-x86_64-pc-windows-msvc.tar.xz"
-        sha256: "<checksum>"
+  "X":
+    "upstream":
+      "Linux":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-Linux-X64.tar.xz"
+          sha256: "<checksum>"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-Linux-ARM64.tar.xz"
+          sha256: "<checksum>"
+      "Macos":
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/LLVM-X.X.X-macOS-ARM64.tar.xz"
+          sha256: "<checksum>"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-X.X.X/clang+llvm-X.X.X-x86_64-pc-windows-msvc.tar.xz"
+          sha256: "<checksum>"
+    "arm-embedded":
+      "Linux":
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-X.X.X-ATfE/ATfE-X.X.X-Linux-x86_64.tar.xz"
+          sha256: "<checksum>"
+        "armv8":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-X.X.X-ATfE/ATfE-X.X.X-Linux-AArch64.tar.xz"
+          sha256: "<checksum>"
+      "Macos":
+        "armv8":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-X.X.X-ATfE/ATfE-X.X.X-Darwin-universal.dmg"
+          sha256: "<checksum>"
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-X.X.X-ATfE/ATfE-X.X.X-Darwin-universal.dmg"
+          sha256: "<checksum>"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-X.X.X-ATfE/ATfE-X.X.X-Windows-x86_64.zip"
+          sha256: "<checksum>"
 ```
 
 Only include platforms that have official prebuilt binaries available.
 
 #### 4. Update README.md
 
-Add the new version to the [Supported Versions & Host Platforms](#-supported-versions--host-platforms) section in this README:
-
-```markdown
-### LLVM X.X.X
-
-| Platform | x86_64 | ARM64 |
-| -------- | ------ | ----- |
-| Linux    | ✅      | ✅     |
-| macOS    | ❌      | ✅     |
-| Windows  | ✅      | ✅     |
-```
-
-Use ✅ for supported platforms and ❌ for unsupported ones.
+Add the new version to the [Supported Versions & Host Platforms](#-supported-versions--host-platforms) section in this README. Be transparent about any version differences between upstream LLVM and the ARM Embedded Toolchain.
 
 #### 5. Test the Package
 
-Build and test the package locally:
+Build and test the package locally for both host and ARM Cortex-M targets:
 
 ```bash
-conan create all --version X.X.X
+# Test host platform build
+conan create all --version X
+
+# Test ARM Cortex-M cross-compilation
+conan create all -pr:b default -pr:h cortex-m4f -pr:h llvm-X --version X --build-require
 ```
 
 This downloads the binaries, verifies checksums, and creates the package.
@@ -331,17 +437,16 @@ Install the toolchain profiles and build the demo application:
 # Install toolchain profiles
 conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
-# Build the demo (use the version you're adding)
-conan build demo -pr llvm-X.X.X -pr linux-x86_64 \
-  --build=missing -c tools.build:skip_test=True
+# Build the demo for host platform
+conan build demo -pr llvm-X -pr linux_x86_64 --build=missing
 
-# Run the demo to verify it works
-./demo/build/Release/demo
+# Build the demo for ARM Cortex-M (cross-compilation)
+conan build demo -pr llvm-X -pr cortex-m4f --build=missing
 ```
 
 > [!NOTE]
-> Replace `linux-x86_64` with your platform's profile. Available
-> profiles are in the `conan/profiles/v1/` directory.
+> Replace `linux_x86_64` and `cortex-m4f` with your platform's profile.
+> Available profiles are in the `conan/profiles/v1/` directory.
 
 #### 7. Submit a Pull Request
 
@@ -350,3 +455,4 @@ Once you've verified everything works:
 1. Commit your changes to `all/conandata.yml` and `README.md`
 2. Submit a pull request with a clear description of the version being added
 3. Include any platform-specific notes or limitations
+4. Note any version mismatches between upstream LLVM and ARM Embedded Toolchain
