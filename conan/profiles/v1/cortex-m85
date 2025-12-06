@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m85
+build_type=Release
+os=baremetal

@@ -5,4 +5,4 @@ compiler.libcxx=libc++
 compiler.version=20
 
 [tool_requires]
-llvm-toolchain/[>=20.0.0 <21.0.0]
+llvm-toolchain/20

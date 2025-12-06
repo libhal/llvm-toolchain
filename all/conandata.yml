@@ -15,7 +15,7 @@
 # limitations under the License.
 
 sources:
-  "20.1.8":
+  "20":
     "upstream":
       "Linux":
         "x86_64":
@@ -35,7 +35,6 @@ sources:
         "armv8":
           url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-aarch64-pc-windows-msvc.tar.xz"
           sha256: "0df3e81e8fe26370dd2b60b9e009d81cd130d3fdc41b257434aa663c5d9f0c13"
-  "20.1.0":
     "arm-embedded": # ARM LLVM Embedded Toolchain - ONLY for ARM Cortex-M
       "Linux":
         "x86_64":

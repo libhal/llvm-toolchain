@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m35pf
+build_type=Release
+os=baremetal

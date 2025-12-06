@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m55
+build_type=Release
+os=baremetal

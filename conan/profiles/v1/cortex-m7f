@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m7f
+build_type=Release
+os=baremetal

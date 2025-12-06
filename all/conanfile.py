@@ -86,6 +86,27 @@ class LLVMToolchainPackage(ConanFile):
                 f"{supported_build_architectures[build_os]}."
             )
 
+        # Validate version-variant compatibility
+        if self.settings_target:
+            variant = self._determine_llvm_variant()
+
+            try:
+                available_variants = list(
+                    self.conan_data['sources'][self.version].keys())
+                if variant not in available_variants:
+                    target_arch = self.settings_target.get_safe('arch')
+                    target_os = self.settings_target.get_safe('os')
+                    raise ConanInvalidConfiguration(
+                        f"Version {self.version} does not support the '{variant}' variant "
+                        f"required for target {target_os}/{target_arch}. "
+                        f"Available variants for {self.version}: {available_variants}. "
+                        f"Hint: ARM Cortex-M targets require version 20.1.0."
+                    )
+            except KeyError:
+                raise ConanInvalidConfiguration(
+                    f"Version {self.version} is not defined in conandata.yml"
+                )
+
     def source(self):
         pass
 
@@ -175,16 +196,13 @@ class LLVMToolchainPackage(ConanFile):
         BUILD_OS = str(self.settings_build.os)
         BUILD_ARCH = str(self.settings_build.arch)
 
-        self.output.info(
-            f'VARIANT: {VARIANT}, BUILD_OS: {BUILD_OS}, BUILD_ARCH: {BUILD_ARCH}')
-        try:
-            URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
-            SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
+        self.output.info(f'VARIANT: {VARIANT}')
+        self.output.info(f'BUILD_OS: {BUILD_OS}, BUILD_ARCH: {BUILD_ARCH}')
 
-            self._extract(URL, SHA256)
-        except KeyError:
-            raise ConanInvalidConfiguration(
-                f"Binary package for LLVM {self.version} not available for {BUILD_OS}/{BUILD_ARCH}")
+        URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
+        SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
+
+        self._extract(URL, SHA256)
 
     def setup_arm_cortex_m(self):
         # Configure CMake for cross-compilation
