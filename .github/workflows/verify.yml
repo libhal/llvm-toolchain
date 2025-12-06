@@ -44,11 +44,18 @@ jobs:
       - name: 📥 Install CMake & Conan
         run: pipx install conan>=2.18.0
 
+      - name: 📡 Add `libhal` conan remote
+        run: |
+          conan remote add libhal https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
+
+      - name: 📡 Create and setup default profile
+        run: conan profile detect --force
+
+      - name: 👁️‍🗨️ Show conan profile
+        run: conan profile show
+
       - name: 📡 Install libhal conan configurations
         run: conan config install https://github.com/libhal/conan-config2.git
-
-      - name: 📡 Add `libhal` conan remote
-        run: conan hal setup
 
       - name: 📡 Install local toolchain profiles
         run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
