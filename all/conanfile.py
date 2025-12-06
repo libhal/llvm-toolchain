@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import subprocess
 from pathlib import Path
 from conan import ConanFile
-from conan.tools.files import get
+from conan.tools.files import get, download, copy
 from conan.errors import ConanInvalidConfiguration
-from conan.tools.apple import XCRun
 
 
 class LLVMToolchainPackage(ConanFile):
@@ -33,6 +33,7 @@ class LLVMToolchainPackage(ConanFile):
 
     options = {
         "default_arch": [True, False],
+        "default_linker_script": [True, False],
         "lto": [True, False],
         "function_sections": [True, False],
         "data_sections": [True, False],
@@ -41,6 +42,7 @@ class LLVMToolchainPackage(ConanFile):
 
     default_options = {
         "default_arch": True,
+        "default_linker_script": True,
         "lto": True,
         "function_sections": True,
         "data_sections": True,
@@ -49,6 +51,8 @@ class LLVMToolchainPackage(ConanFile):
 
     options_description = {
         "default_arch": "Automatically inject architecture-appropriate -target and -mcpu arguments into compilation flags.",
+        "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
+        "default_linker_script": "Automatically specify what the default linker script in order to allow projects without a linker script to link without error. If the user specifies their own linker script(s) via the -T argument, that default linker script will be ignored and the supplied linker script(s) will be used. Disabling this flag is not necessary when building applications with custom linker scripts. Only use this if you have multiple custom linker scripts and a default linker script you'd like to override against the supplied one from this toolchain library.",
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
@@ -82,29 +86,123 @@ class LLVMToolchainPackage(ConanFile):
                 f"{supported_build_architectures[build_os]}."
             )
 
+        # Validate version-variant compatibility
+        if self.settings_target:
+            variant = self._determine_llvm_variant()
+
+            try:
+                available_variants = list(
+                    self.conan_data['sources'][self.version].keys())
+                if variant not in available_variants:
+                    target_arch = self.settings_target.get_safe('arch')
+                    target_os = self.settings_target.get_safe('os')
+                    raise ConanInvalidConfiguration(
+                        f"Version {self.version} does not support the '{variant}' variant "
+                        f"required for target {target_os}/{target_arch}. "
+                        f"Available variants for {self.version}: {available_variants}. "
+                        f"Hint: ARM Cortex-M targets require version 20.1.0."
+                    )
+            except KeyError:
+                raise ConanInvalidConfiguration(
+                    f"Version {self.version} is not defined in conandata.yml"
+                )
+
     def source(self):
         pass
 
     def build(self):
         pass
 
-    def package(self):
-        # Get download URL and hash from conandata.yml based on version, OS and
-        # arch
-        OS_NAME = str(self.settings_build.os)
-        ARCH_NAME = str(self.settings_build.arch)
+    def _determine_llvm_variant(self):
+        """Determine which LLVM variant to download based on target architecture"""
+        # The command for cross compiling this project for a particular binary,
+        # in order to fetch the binaries for that version of LLVM use:
+        #
+        #      conan create all -pr:b default -pr:h hal/mcu/stm32f103c8 -pr:h hal/tc/llvm-20.1.0 --version=20.1.0 --build-require
+        #
+        # This will set the settings_target which will download the appropriate
+        # fork of LLVM for that architecture.
+        if not self.settings_target:
+            self.output.info("Using upstream LLVM binary")
+            return "upstream"
 
-        try:
-            url = self.conan_data["sources"][self.version][OS_NAME][ARCH_NAME]["url"]
-            sha256 = self.conan_data["sources"][self.version][OS_NAME][ARCH_NAME]["sha256"]
-        except KeyError:
-            raise ConanInvalidConfiguration(
-                f"Binary package for LLVM {self.version} not available for {OS_NAME}/{ARCH_NAME}")
+        TARGET_OS = self.settings_target.get_safe("os")
+        TARGET_ARCH = self.settings_target.get_safe("arch")
+
+        self.output.warning(
+            f"TARGET_OS:{TARGET_OS}, TARGET_ARCH:{TARGET_ARCH}")
+
+        # ARM Cortex-M baremetal gets special ARM Embedded Toolchain
+        if TARGET_OS == "baremetal" and TARGET_ARCH in [
+            "cortex-m0", "cortex-m0plus", "cortex-m1",
+            "cortex-m3", "cortex-m4", "cortex-m4f",
+            "cortex-m7", "cortex-m7f", "cortex-m7d",
+            "cortex-m23", "cortex-m33", "cortex-m33f",
+            "cortex-m35p", "cortex-m35pf",
+            "cortex-m55", "cortex-m85",
+        ]:
+            self.output.info("Using ARM Embedded LLVM fork")
+            return "arm-embedded"
+
+        # Everything else uses regular LLVM
+        # This includes:
+        # - RISC-V (riscv32, riscv64)
+        # - AVR (avr)
+        # - Other ARM variants (cortex-a, etc.)
+        # - Host builds
+        self.output.info("Using upstream LLVM binary")
+        return "upstream"
+
+    def _extract_macos_dmg(self, url: str, sha256: str):
+        # Download and store  to source folder just for storage
+        LOCAL_DMG_FILE = Path(self.source_folder) / "llvm.dmg"
+        download(self, url, LOCAL_DMG_FILE)
+
+        # Mount the DMG file system onto the build folder
+        subprocess.run(
+            ["hdiutil", "attach", str(LOCAL_DMG_FILE), "-mountpoint",
+             self.build_folder, "-nobrowse", "-readonly", "-quiet"])
+
+        # Copy contents from LLVM directory to package folder
+        PATHS = Path(self.build_folder).glob("LLVM-*")
+        for path in PATHS:
+            self.output.warning(f"📁 COPYING Contents of {path}")
+            copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
+        # Copy contents from LLVM directory to package folder
+        PATHS = Path(self.build_folder).glob("ATfE-*")
+        for path in PATHS:
+            self.output.warning(f"📁 COPYING Contents of {path}")
+            copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
+
+        # Detach DMG
+        subprocess.run(
+            ["hdiutil", "detach", self.build_folder, "-force", "-quiet"])
+
+        # Delete DMG file
+        Path(LOCAL_DMG_FILE).unlink()
+
+    def _extract(self, url: str, sha256: str):
+        if url.endswith(".dmg"):
+            self._extract_macos_dmg(url=url, sha256=sha256)
+            return
 
         # Download and extract the LLVM binary package
         # All platforms use tar.xz archives now
         get(self, url, sha256=sha256, strip_root=True,
             destination=self.package_folder)
+
+    def package(self):
+        VARIANT = self._determine_llvm_variant()
+        BUILD_OS = str(self.settings_build.os)
+        BUILD_ARCH = str(self.settings_build.arch)
+
+        self.output.info(f'VARIANT: {VARIANT}')
+        self.output.info(f'BUILD_OS: {BUILD_OS}, BUILD_ARCH: {BUILD_ARCH}')
+
+        URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
+        SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
+
+        self._extract(URL, SHA256)
 
     def setup_arm_cortex_m(self):
         # Configure CMake for cross-compilation
@@ -200,6 +298,15 @@ class LLVMToolchainPackage(ConanFile):
         c_flags = []
         cxx_flags = []
         exelinkflags = []
+        definitions = [
+            # LLVM's libc++ implementation needs a definition for the threads
+            # API. Without this, the libc++ headers will emit a compile time
+            # "error" stating that the thread API must be defined.
+            "_LIBCPP_HAS_NO_THREADS=1"
+        ]
+
+        if self.options.default_linker_script:
+            exelinkflags.append("-Wl,--default-script=picolibcpp.ld")
 
         if (self.options.default_arch and self.settings_target and
                 self.settings_target.get_safe('arch') in ARCH_MAP):
@@ -237,6 +344,7 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.build:cflags", c_flags)
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
+        self.conf_info.append("tools.build:defines", definitions)
 
     @property
     def _lib_path(self) -> Path:
@@ -261,12 +369,14 @@ class LLVMToolchainPackage(ConanFile):
             cxx_flags.append("-fdata-sections ")
 
         if self.options.gc_sections:
-            if self.settings.os == "Macos":
-                exelinkflags.append("-Wl,-dead_strip ")
-            elif self.settings.os == "Linux":
-                exelinkflags.append("-Wl,--gc-sections ")
-            else:
-                pass  # LLVM will apply gc-sections automatically for Windows
+            if self.settings_target:
+                if self.settings_target.get_safe("os") == "Macos":
+                    exelinkflags.append("-Wl,-dead_strip ")
+                elif self.settings_target.get_safe("os") != "Windows":
+                    exelinkflags.append("-Wl,--gc-sections ")
+                else:
+                    pass
+                    # LLVM will apply gc-sections automatically for Windows
 
         self.conf_info.append("tools.build:cflags", c_flags)
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
@@ -312,15 +422,29 @@ class LLVMToolchainPackage(ConanFile):
             "asm": "clang",
         })
 
+        # Add CMake utility tools
+        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", {
+            "CMAKE_OBJCOPY": "llvm-objcopy",
+            "CMAKE_SIZE_UTIL": "llvm-size",
+            "CMAKE_OBJDUMP": "llvm-objdump",
+            "CMAKE_AR": "llvm-ar",
+            "CMAKE_RANLIB": "llvm-ranlib",
+        })
+
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
 
-        self.add_common_flags()
-        if self.settings.os == "Macos":
-            self.setup_mac_osx()
-        if self.settings.os == "Linux":
-            self.setup_linux()
-        if self.settings.os == "Windows":
-            self.setup_windows()
+        if self.settings_target:
+            self.add_common_flags()
+            if self.settings_target.get_safe('os') == 'Macos':
+                self.setup_mac_osx()
+            elif self.settings_target.get_safe('os') == 'Linux':
+                self.setup_linux()
+            elif self.settings_target.get_safe('os') == 'Windows':
+                self.setup_windows()
+            elif self.settings_target.get_safe('os') == 'baremetal':
+                ARCH = str(self.settings_target.get_safe('arch'))
+                if ARCH.startswith('cortex-m'):
+                    self.setup_arm_cortex_m()
 
     def package_id(self):
         # All options should be removed as none of them should impact the

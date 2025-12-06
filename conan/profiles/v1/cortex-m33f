@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m33f
+build_type=Release
+os=baremetal

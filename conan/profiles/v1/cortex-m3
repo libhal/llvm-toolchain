@@ -1,0 +1,4 @@
+[settings]
+arch=cortex-m3
+build_type=Release
+os=baremetal
