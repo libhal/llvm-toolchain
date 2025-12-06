@@ -136,6 +136,11 @@ class LLVMToolchainPackage(ConanFile):
         for path in PATHS:
             self.output.warning(f"📁 COPYING Contents of {path}")
             copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
+        # Copy contents from LLVM directory to package folder
+        PATHS = Path(self.build_folder).glob("ATfE-*")
+        for path in PATHS:
+            self.output.warning(f"📁 COPYING Contents of {path}")
+            copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
 
         # Detach DMG
         subprocess.run(

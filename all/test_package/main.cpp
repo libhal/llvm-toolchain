@@ -14,6 +14,9 @@ main()
   return c;
 }
 
+FILE* const stderr = nullptr;
+FILE* const stdout = nullptr;
+
 // Use arm embedded to build stm32f103c8
 //
 //    VERBOSE=1 conan test -pr stm32f103c8 -pr hal/tc/llvm-19.1.5 all/
