@@ -15,67 +15,6 @@
 # limitations under the License.
 
 sources:
-  "19.1.7":
-    "host":
-      "Linux":
-        "x86_64":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-Linux-X64.tar.xz"
-          sha256: "4a5ec53951a584ed36f80240f6fbf8fdd46b4cf6c7ee87cc2d5018dc37caf679"
-        "armv8":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/clang+llvm-19.1.7-aarch64-linux-gnu.tar.xz"
-          sha256: "a73d9326e5d756e3937df6a9f621664d76403b59119f741901106b387e53a6ae"
-      "Macos":
-        "x86_64":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-macOS-X64.tar.xz"
-          sha256: "49405e75fbe7ad6f8139a33f59ec8c5112b75b3027405c7b92d19f4c6f02c78a"
-        "armv8":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-macOS-ARM64.tar.xz"
-          sha256: "d93bf12952d89fe4ec7501c40475718b722407da6a8d651f05c995863468e570"
-      "Windows":
-        "x86_64":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/clang+llvm-19.1.7-x86_64-pc-windows-msvc.tar.xz"
-          sha256: "b4557b4f012161f56a2f5d9e877ab9635cafd7a08f7affe14829bd60c9d357f0"
-  "19.1.5":
-    "host":
-      "Linux":
-        "x86_64":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/LLVM-19.1.5-Linux-X64.tar.xz"
-          sha256: "13e9975b026d431c945927960e5f8c0a47a155a2f600f57e85f4d1482620c65f"
-        "armv8":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/clang+llvm-19.1.5-aarch64-linux-gnu.tar.xz"
-          sha256: "1bdc342b7d03cbcfafb2ffb8659eb0e4d5c6ddef6f56e0cad0e0c09c52577a4f"
-      "Macos":
-        "x86_64":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/LLVM-19.1.5-macOS-X64.tar.xz"
-          sha256: "f593d45992807d03c2aeb4c968c5cab9e78403430caea21dca4b787cbca3b9f4"
-        "armv8":
-          # Use x64 variant binaries on armv8 with Rosseta, then cross compile
-          # to armv8
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/LLVM-19.1.5-macOS-X64.tar.xz"
-          sha256: "f593d45992807d03c2aeb4c968c5cab9e78403430caea21dca4b787cbca3b9f4"
-      "Windows":
-        "x86_64":
-          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.5/clang+llvm-19.1.5-x86_64-pc-windows-msvc.tar.xz"
-          sha256: "467d1a73ca938f47734af3baac2e78c5e730285469096ee088bb5c9590cabd70"
-    "arm-embedded": # ARM LLVM Embedded Toolchain - ONLY for ARM Cortex-M
-      "Linux":
-        "x86_64":
-          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Linux-x86_64.tar.xz"
-          sha256: "b6a8c430f894c9c68ba67493c9e6a33e887901fb63f1b1c7d34f90efe51dbc81"
-        "armv8":
-          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Linux-AArch64.tar.xz"
-          sha256: "21a35fb9d5ae7e2b8deec7e0fa32c06fb97b92f3afca2d22c2bda98d6de3d7d8"
-      "Macos": # x86_64 and armv8 are the same because the dmg its universal
-        "armv8":
-          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Darwin-universal.dmg"
-          sha256: "0451e67dc9a9066c17f746c26654962fa3889d4df468db1245d1bae69438eaf5"
-        "x86_64":
-          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Darwin-universal.dmg"
-          sha256: "0451e67dc9a9066c17f746c26654962fa3889d4df468db1245d1bae69438eaf5"
-      "Windows":
-        "x86_64":
-          url: "https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases/download/release-19.1.5/LLVM-ET-Arm-19.1.5-Windows-x86_64.zip"
-          sha256: "97aa18feba7bf1764de8a1f2e8f0a5ea3a8b3df8a03ebd34ec8c7dfcac9e1cc2"
   "20.1.8":
     "host":
       "Linux":
@@ -101,10 +40,10 @@ sources:
       "Linux":
         "x86_64":
           url: "https://github.com/arm/arm-toolchain/releases/download/release-20.1.0-ATfE/ATfE-20.1.0-Linux-x86_64.tar.xz"
-          sha256: ""
+          sha256: "c1179396608c07bf68f3014923cfdfcd11c8402a3732f310c23d07c9a726b275"
         "armv8":
           url: "https://github.com/arm/arm-toolchain/releases/download/release-20.1.0-ATfE/ATfE-20.1.0-Linux-AArch64.tar.xz"
-          sha256: "c1179396608c07bf68f3014923cfdfcd11c8402a3732f310c23d07c9a726b275"
+          sha256: "2fa9220f64097b71c07e6de2917f33fda1bb736964730786e90a430fdc0fa6be"
       "Macos": # x86_64 and armv8 are the same because the dmg its universal
         "armv8":
           url: "https://github.com/arm/arm-toolchain/releases/download/release-20.1.0-ATfE/ATfE-20.1.0-Darwin-universal.dmg"

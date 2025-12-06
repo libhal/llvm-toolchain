@@ -268,7 +268,12 @@ class LLVMToolchainPackage(ConanFile):
 
         c_flags = []
         cxx_flags = []
-        exelinkflags = []
+        exelinkflags = [
+            # This is required in order to get LLVM to link binaries in
+            # test_packages. A user can override this by supplying their own
+            # linker script via the -T argument.
+            "-Wl,--default-script=picolibcpp.ld",
+        ]
         definitions = [
             # LLVM's libc++ implementation needs a definition for the threads
             # API. Without this, the libc++ headers will emit a compile time
