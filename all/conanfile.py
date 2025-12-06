@@ -38,6 +38,8 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": [True, False],
         "data_sections": [True, False],
         "gc_sections": [True, False],
+        "require_cmake": [True, False],
+        "require_ninja": [True, False],
     }
 
     default_options = {
@@ -47,6 +49,8 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": True,
         "data_sections": True,
         "gc_sections": True,
+        "require_cmake": True,
+        "require_ninja": True,
     }
 
     options_description = {
@@ -56,7 +60,9 @@ class LLVMToolchainPackage(ConanFile):
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
-        "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled."
+        "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled.",
+        "require_cmake": "Automatically add cmake/[^4.1.2] as a transitive build requirement.",
+        "require_ninja": "Automatically add ninja/[^1.13.1] as a transitive build requirement and configure CMake to use Ninja as the generator."
     }
 
     def validate(self):
@@ -106,6 +112,12 @@ class LLVMToolchainPackage(ConanFile):
                 raise ConanInvalidConfiguration(
                     f"Version {self.version} is not defined in conandata.yml"
                 )
+
+    def build_requirements(self):
+        if self.options.require_cmake:
+            self.tool_requires("cmake/[^4.1.2]", visible=True)
+        if self.options.require_ninja:
+            self.tool_requires("ninja/[^1.13.1]", visible=True)
 
     def source(self):
         pass
@@ -422,14 +434,25 @@ class LLVMToolchainPackage(ConanFile):
             "asm": "clang",
         })
 
+        # Configure Ninja as CMake generator if required
+        if self.options.require_ninja:
+            self.conf_info.define("tools.cmake.cmaketoolchain:generator", "Ninja")
+
         # Add CMake utility tools
-        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", {
+        cmake_extra_variables = {
             "CMAKE_OBJCOPY": "llvm-objcopy",
             "CMAKE_SIZE_UTIL": "llvm-size",
             "CMAKE_OBJDUMP": "llvm-objdump",
             "CMAKE_AR": "llvm-ar",
             "CMAKE_RANLIB": "llvm-ranlib",
-        })
+        }
+
+        # Add C++ modules support if cmake and ninja are required
+        if self.options.require_cmake and self.options.require_ninja:
+            cmake_extra_variables["CMAKE_CXX_SCAN_FOR_MODULES"] = "ON"
+            cmake_extra_variables["CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES"] = "1942b4fa-b2c5-4546-9385-83f254070067"
+
+        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
 
@@ -455,6 +478,8 @@ class LLVMToolchainPackage(ConanFile):
         del self.info.options.function_sections
         del self.info.options.data_sections
         del self.info.options.gc_sections
+        del self.info.options.require_cmake
+        del self.info.options.require_ninja
         # Remove any compiler or build_type settings from recipe hash
         del self.info.settings.compiler
         del self.info.settings.build_type

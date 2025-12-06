@@ -66,10 +66,20 @@ jobs:
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
-        working-directory: demo
+        working-directory: demos/cpp
         run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
-        working-directory: demo
+        working-directory: demos/cpp
+        run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
+
+      - name: 📦 Build Demos Conan Package
+        if: ${{ runner.os != 'Windows' }}
+        working-directory: demos/cpp-modules
+        run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
+
+      - name: 📦 Build Demos Conan Package
+        if: ${{ runner.os == 'Windows' }}
+        working-directory: demos/cpp-modules
         run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
