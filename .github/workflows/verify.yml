@@ -44,35 +44,28 @@ jobs:
       - name: 📥 Install CMake & Conan
         run: pipx install conan>=2.18.0
 
-      - name: 📡 Add `libhal` conan remote
-        run: |
-          conan remote add libhal https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
-
-      - name: 📡 Create and setup default profile
-        run: conan profile detect --force
-
-      - name: 👁️‍🗨️ Show conan profile
-        run: conan profile show
-
       - name: 📡 Install libhal conan configurations
         run: conan config install https://github.com/libhal/conan-config2.git
+
+      - name: 📡 Add `libhal` conan remote
+        run: conan hal setup
 
       - name: 📡 Install local toolchain profiles
         run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
       - name: 📦 Create Conan Package
         working-directory: all
-        run: conan create . --version=${{ inputs.version }} --build-require
+        run: conan create . -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.demo_profile }} --version=${{ inputs.version }} --build-require
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os != 'Windows' }}
         working-directory: demo
-        run: VERBOSE=1 conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: VERBOSE=1 conan build . -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
 
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         working-directory: demo
-        run: conan build . -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True
+        run: conan build . -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.demo_profile }} --build=cmake --build=missing:cmake/* -c tools.build:skip_test=True --build-require
 
       - name: ▶️ Run Demo
         run: demo/build/Release/demo
