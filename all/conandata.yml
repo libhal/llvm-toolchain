@@ -16,7 +16,7 @@
 
 sources:
   "20.1.8":
-    "host":
+    "upstream":
       "Linux":
         "x86_64":
           url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-X64.tar.xz"

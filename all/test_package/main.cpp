@@ -1,5 +1,11 @@
 #include <stdio.h>
 
+// Initialize stdout/stderr for ARM EABI bare metal systems
+#if defined(__ARM_EABI__)
+FILE* const stderr = nullptr;
+FILE* const stdout = nullptr;
+#endif
+
 int
 main()
 {
@@ -11,11 +17,8 @@ main()
   printf("a = %d, b = %d\n", a, b);
   printf("a + b = c = %d\n", c);
 
-  return c;
+  return 0;
 }
-
-FILE* const stderr = nullptr;
-FILE* const stdout = nullptr;
 
 // Use arm embedded to build stm32f103c8
 //
