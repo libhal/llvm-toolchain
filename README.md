@@ -29,7 +29,7 @@ All binaries are downloaded from official sources:
 | Platform | x86_64 | ARM64 |
 | -------- | ------ | ----- |
 | Linux    | ✅      | ✅     |
-| macOS    | ❌      | ✅     |
+| macOS    | ✅      | ✅     |
 | Windows  | ✅      | ✅     |
 
 > [!IMPORTANT]
