@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <cstdio>
 
 // Initialize stdout/stderr for ARM EABI bare metal systems
 #if defined(__ARM_EABI__)
@@ -13,9 +13,9 @@ main()
   int b = 12;
   int c = a + b;
 
-  puts("Hello, world!");
-  printf("a = %d, b = %d\n", a, b);
-  printf("a + b = c = %d\n", c);
+  std::puts("Hello, world!");
+  std::printf("a = %d, b = %d\n", a, b);
+  std::printf("a + b = c = %d\n", c);
 
   return 0;
 }
