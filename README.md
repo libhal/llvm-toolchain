@@ -69,7 +69,7 @@ conan build . -pr llvm-20 -pr linux_x86_64
 conan build . -pr llvm-20 -pr linux_arm
 
 # ARM64 macOS
-conan build . -pr llvm-20 -pr mac_arm
+conan build . -pr llvm-20 -pr macos_arm
 
 # x86_64 Windows
 conan build . -pr llvm-20 -pr windows_x86_64
