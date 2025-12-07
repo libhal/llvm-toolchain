@@ -115,9 +115,9 @@ class LLVMToolchainPackage(ConanFile):
 
     def build_requirements(self):
         if self.options.require_cmake:
-            self.tool_requires("cmake/[^4.1.2]", visible=True)
+            self.tool_requires("cmake/[>=3.28.0 <5.0.0]", visible=True)
         if self.options.require_ninja:
-            self.tool_requires("ninja/[^1.13.1]", visible=True)
+            self.tool_requires("ninja/[^1.0.0]", visible=True)
 
     def source(self):
         pass
