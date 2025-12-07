@@ -17,6 +17,42 @@ architectures.
 - **Integrated tooling**: Includes clang-tidy, clang-format, and other
   development tools
 
+## 🧩 C++20 Modules Support
+
+This toolchain includes **full C++20 modules support** out of the box when using
+CMake and Ninja (enabled by default via `require_cmake` and `require_ninja` options).
+
+### CMake Example
+
+To use C++20 modules in your project, use `target_sources` with the `FILE_SET`
+parameter to specify module interface files (`.cppm`):
+
+```cmake
+cmake_minimum_required(VERSION 3.40)
+
+project(my_project LANGUAGES CXX)
+
+add_executable(my_app)
+
+target_sources(my_app PUBLIC
+    FILE_SET CXX_MODULES
+    TYPE CXX_MODULES
+    FILES my_module.cppm         # Module interface files
+    PRIVATE
+    main.cpp                     # Regular source files
+    other_source.cpp
+)
+```
+
+**Key points:**
+
+- Module interface files (`.cppm`) must be listed under `FILE_SET CXX_MODULES`
+- Regular source files (`.cpp`) are listed under `PRIVATE`
+- CMake automatically handles module dependency scanning via `clang-scan-deps`
+- Works seamlessly with both host platforms and ARM Cortex-M targets
+
+See [demos/cpp-modules/](demos/cpp-modules/) for a complete working example.
+
 ## 📋 Supported Versions & Host Platforms
 
 All binaries are downloaded from official sources:
