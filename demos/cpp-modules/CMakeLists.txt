@@ -10,8 +10,14 @@ target_sources(demo PUBLIC
     FILE_SET CXX_MODULES
     TYPE CXX_MODULES
     FILES module.cppm
-    PRIVATE main.cpp
+    PRIVATE
+    main.cpp
+    stdio_polyfill.cpp
 )
+
+if(${CMAKE_CROSSCOMPILING})
+    target_link_options(demo PRIVATE -lcrt0 -lcrt0-semihost)
+endif(${CMAKE_CROSSCOMPILING})
 
 if(NOT ${CMAKE_CROSSCOMPILING})
   add_custom_target(run_demo ALL DEPENDS demo COMMAND demo)

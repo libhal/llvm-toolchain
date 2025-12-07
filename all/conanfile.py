@@ -436,7 +436,8 @@ class LLVMToolchainPackage(ConanFile):
 
         # Configure Ninja as CMake generator if required
         if self.options.require_ninja:
-            self.conf_info.define("tools.cmake.cmaketoolchain:generator", "Ninja")
+            self.conf_info.define(
+                "tools.cmake.cmaketoolchain:generator", "Ninja")
 
         # Add CMake utility tools
         cmake_extra_variables = {
@@ -452,7 +453,8 @@ class LLVMToolchainPackage(ConanFile):
             cmake_extra_variables["CMAKE_CXX_SCAN_FOR_MODULES"] = "ON"
             cmake_extra_variables["CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES"] = "1942b4fa-b2c5-4546-9385-83f254070067"
 
-        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
+        self.conf_info.update(
+            "tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
 
@@ -483,3 +485,13 @@ class LLVMToolchainPackage(ConanFile):
         # Remove any compiler or build_type settings from recipe hash
         del self.info.settings.compiler
         del self.info.settings.build_type
+
+        # Normalize Cortex-M variants to share the same package_id
+        if self.settings_target:
+            target_arch = str(self.settings_target.get_safe("arch") or "")
+            target_os = str(self.settings_target.get_safe("os") or "")
+
+            # All Cortex-M variants use the SAME binary - normalize them
+            if target_os == "baremetal" and target_arch.startswith("cortex-m"):
+                # Use conf system to modify the hash for the package ID
+                self.info.conf.define("user.llvm:target_family", "cortex-m")

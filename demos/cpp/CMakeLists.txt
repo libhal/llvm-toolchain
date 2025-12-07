@@ -4,7 +4,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(demo LANGUAGES CXX)
 
-add_executable(demo main.cpp)
+add_executable(demo main.cpp stdio_polyfill.cpp)
 
 if(NOT ${CMAKE_CROSSCOMPILING})
   add_custom_target(run_demo ALL DEPENDS demo COMMAND demo)
