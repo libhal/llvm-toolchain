@@ -15,10 +15,6 @@ target_sources(demo PUBLIC
     stdio_polyfill.cpp
 )
 
-if(${CMAKE_CROSSCOMPILING})
-    target_link_options(demo PRIVATE -lcrt0 -lcrt0-semihost)
-endif(${CMAKE_CROSSCOMPILING})
-
 if(NOT ${CMAKE_CROSSCOMPILING})
   add_custom_target(run_demo ALL DEPENDS demo COMMAND demo)
 endif(NOT ${CMAKE_CROSSCOMPILING})
