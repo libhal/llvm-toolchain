@@ -17,7 +17,7 @@
 import subprocess
 from pathlib import Path
 from conan import ConanFile
-from conan.tools.files import get, download, copy
+from conan.tools.files import get, download, copy, chmod
 from conan.errors import ConanInvalidConfiguration
 
 
@@ -203,6 +203,36 @@ class LLVMToolchainPackage(ConanFile):
         get(self, url, sha256=sha256, strip_root=True,
             destination=self.package_folder)
 
+    def _download_and_install_clang_scan_deps(self,
+                                              build_os: str,
+                                              build_arch: str):
+        CLANG_SCAN_DEPS_SHA256 = {
+            "20": {
+                "Linux_armv8": "3e92a5c676ddb28d48ef83a37147d031e8100f93c3f1394dd8fd9e3d868e61fd",
+                "Linux_x86_64": "8a2b1d64982e3b73d19e283dc3baf1186a8a74634fa2ef72abeb980534fea3b6",
+                "Macos_armv8": "14ad7609b9c89e7efd86337c67b89b2975e932ad183e88a21b4a26b19ae1b30c",
+                "Macos_x86_64": "b450c31e94987fc0e3a0c568426f0726fdc0b3f10911ebc25e96984b3cf4f282",
+                "Windows_armv8": "bf4cbaff98506e326f312a3da0fc4c345fc77055fd4cf8872de788d19d005430",
+                "Windows_x86_64": "371c9e9140e63dacbd4e626a41c421e09e46fd17d3930b0d315072140ef0c6a9",
+            }
+        }
+
+        LLVM_POLYFILL_URL_BASE = f"https://github.com/libhal/llvm-toolchain/releases/download/llvm-{self.version}-polyfill"
+        BUILD = f"{build_os}_{build_arch}"
+        URL = f"{LLVM_POLYFILL_URL_BASE}/{BUILD}-clang-scan-deps"
+
+        if build_os == "Windows":
+            FINAL_FILE_NAME = "clang-scan-deps.exe"
+        else:
+            FINAL_FILE_NAME = "clang-scan-deps"
+
+        SCAN_DEPS_FILE_DESTINATION = Path(
+            self.package_folder) / "bin" / FINAL_FILE_NAME
+        download(self, URL,
+                 sha256=CLANG_SCAN_DEPS_SHA256[self.version][BUILD],
+                 filename=SCAN_DEPS_FILE_DESTINATION)
+        chmod(self, SCAN_DEPS_FILE_DESTINATION, execute=True)
+
     def package(self):
         VARIANT = self._determine_llvm_variant()
         BUILD_OS = str(self.settings_build.os)
@@ -214,6 +244,12 @@ class LLVMToolchainPackage(ConanFile):
         URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
         SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
+        if VARIANT == "arm-embedded":
+            # Download & install the missing `clang-scan-deps` from  ARM
+            # toolchain (ARM's LLVM fork) does not include the binary. These
+            # binaries were taken from the upstream LLVM project and added to this
+            # directory.
+            self._download_and_install_clang_scan_deps(BUILD_OS, BUILD_ARCH)
         self._extract(URL, SHA256)
 
     def setup_arm_cortex_m(self):
