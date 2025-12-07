@@ -25,6 +25,9 @@ sources:
           url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-ARM64.tar.xz"
           sha256: "b855cc17d935fdd83da82206b7a7cfc680095efd1e9e8182c4a05e761958bef8"
       "Macos":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-macOS-X64.tar.xz"
+          sha256: "ccf82ffe7e136ee49659cb57157856a7963d0950fac3d05aabba0db75bfba26f"
         "armv8":
           url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-macOS-ARM64.tar.xz"
           sha256: "a9a22f450d35f1f73cd61ab6a17c6f27d8f6051d56197395c1eb397f0c9bbec4"
