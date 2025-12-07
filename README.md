@@ -207,6 +207,8 @@ llvm-toolchain/*:lto=True
 llvm-toolchain/*:data_sections=True
 llvm-toolchain/*:function_sections=True
 llvm-toolchain/*:gc_sections=True
+llvm-toolchain/*:require_cmake=True
+llvm-toolchain/*:require_ninja=True
 ```
 
 ### `default_arch` (Default: `True`)
@@ -255,6 +257,33 @@ garbage collection at link time.
 ### `gc_sections` (Default: `True`)
 
 Enable `--gc-sections` linker flag for garbage collection of unused sections.
+
+### `require_cmake` (Default: `True`)
+
+Automatically add `cmake/[^4.1.2]` as a transitive build requirement. This ensures
+that CMake is available for building projects that use the LLVM toolchain.
+
+When enabled, the toolchain will also set the following CMake variables (when
+`require_ninja` is also enabled):
+
+- `CMAKE_CXX_SCAN_FOR_MODULES`: Enables C++20 modules support
+- `CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES`: Enables experimental package
+  dependency export features
+
+Users can disable this option in build profiles if they want to manage CMake
+versions themselves.
+
+### `require_ninja` (Default: `True`)
+
+Automatically add `ninja/[^1.13.1]` as a transitive build requirement and
+configure CMake to use Ninja as the generator.
+
+When enabled, the toolchain will set:
+
+- CMake generator to "Ninja" via `tools.cmake.cmaketoolchain:generator`
+
+Users can disable this option in build profiles if they want to use a different
+build system or manage Ninja versions themselves.
 
 ## 🎯 Supported ARM Cortex-M Targets
 

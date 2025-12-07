@@ -17,7 +17,7 @@
 import subprocess
 from pathlib import Path
 from conan import ConanFile
-from conan.tools.files import get, download, copy
+from conan.tools.files import get, download, copy, chmod
 from conan.errors import ConanInvalidConfiguration
 
 
@@ -38,6 +38,8 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": [True, False],
         "data_sections": [True, False],
         "gc_sections": [True, False],
+        "require_cmake": [True, False],
+        "require_ninja": [True, False],
     }
 
     default_options = {
@@ -47,6 +49,8 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": True,
         "data_sections": True,
         "gc_sections": True,
+        "require_cmake": True,
+        "require_ninja": True,
     }
 
     options_description = {
@@ -56,7 +60,9 @@ class LLVMToolchainPackage(ConanFile):
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
-        "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled."
+        "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled.",
+        "require_cmake": "Automatically add cmake/[^4.1.2] as a transitive build requirement.",
+        "require_ninja": "Automatically add ninja/[^1.13.1] as a transitive build requirement and configure CMake to use Ninja as the generator."
     }
 
     def validate(self):
@@ -106,6 +112,12 @@ class LLVMToolchainPackage(ConanFile):
                 raise ConanInvalidConfiguration(
                     f"Version {self.version} is not defined in conandata.yml"
                 )
+
+    def build_requirements(self):
+        if self.options.require_cmake:
+            self.tool_requires("cmake/[^4.1.2]", visible=True)
+        if self.options.require_ninja:
+            self.tool_requires("ninja/[^1.13.1]", visible=True)
 
     def source(self):
         pass
@@ -191,6 +203,36 @@ class LLVMToolchainPackage(ConanFile):
         get(self, url, sha256=sha256, strip_root=True,
             destination=self.package_folder)
 
+    def _download_and_install_clang_scan_deps(self,
+                                              build_os: str,
+                                              build_arch: str):
+        CLANG_SCAN_DEPS_SHA256 = {
+            "20": {
+                "Linux_armv8": "3e92a5c676ddb28d48ef83a37147d031e8100f93c3f1394dd8fd9e3d868e61fd",
+                "Linux_x86_64": "8a2b1d64982e3b73d19e283dc3baf1186a8a74634fa2ef72abeb980534fea3b6",
+                "Macos_armv8": "14ad7609b9c89e7efd86337c67b89b2975e932ad183e88a21b4a26b19ae1b30c",
+                "Macos_x86_64": "b450c31e94987fc0e3a0c568426f0726fdc0b3f10911ebc25e96984b3cf4f282",
+                "Windows_armv8": "bf4cbaff98506e326f312a3da0fc4c345fc77055fd4cf8872de788d19d005430",
+                "Windows_x86_64": "371c9e9140e63dacbd4e626a41c421e09e46fd17d3930b0d315072140ef0c6a9",
+            }
+        }
+
+        LLVM_POLYFILL_URL_BASE = f"https://github.com/libhal/llvm-toolchain/releases/download/llvm-{self.version}-polyfill"
+        BUILD = f"{build_os}_{build_arch}"
+        URL = f"{LLVM_POLYFILL_URL_BASE}/{BUILD}-clang-scan-deps"
+
+        if build_os == "Windows":
+            FINAL_FILE_NAME = "clang-scan-deps.exe"
+        else:
+            FINAL_FILE_NAME = "clang-scan-deps"
+
+        SCAN_DEPS_FILE_DESTINATION = Path(
+            self.package_folder) / "bin" / FINAL_FILE_NAME
+        download(self, URL,
+                 sha256=CLANG_SCAN_DEPS_SHA256[self.version][BUILD],
+                 filename=SCAN_DEPS_FILE_DESTINATION)
+        chmod(self, SCAN_DEPS_FILE_DESTINATION, execute=True)
+
     def package(self):
         VARIANT = self._determine_llvm_variant()
         BUILD_OS = str(self.settings_build.os)
@@ -202,6 +244,12 @@ class LLVMToolchainPackage(ConanFile):
         URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
         SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
+        if VARIANT == "arm-embedded":
+            # Download & install the missing `clang-scan-deps` from  ARM
+            # toolchain (ARM's LLVM fork) does not include the binary. These
+            # binaries were taken from the upstream LLVM project and added to this
+            # directory.
+            self._download_and_install_clang_scan_deps(BUILD_OS, BUILD_ARCH)
         self._extract(URL, SHA256)
 
     def setup_arm_cortex_m(self):
@@ -422,14 +470,27 @@ class LLVMToolchainPackage(ConanFile):
             "asm": "clang",
         })
 
+        # Configure Ninja as CMake generator if required
+        if self.options.require_ninja:
+            self.conf_info.define(
+                "tools.cmake.cmaketoolchain:generator", "Ninja")
+
         # Add CMake utility tools
-        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", {
+        cmake_extra_variables = {
             "CMAKE_OBJCOPY": "llvm-objcopy",
             "CMAKE_SIZE_UTIL": "llvm-size",
             "CMAKE_OBJDUMP": "llvm-objdump",
             "CMAKE_AR": "llvm-ar",
             "CMAKE_RANLIB": "llvm-ranlib",
-        })
+        }
+
+        # Add C++ modules support if cmake and ninja are required
+        if self.options.require_cmake and self.options.require_ninja:
+            cmake_extra_variables["CMAKE_CXX_SCAN_FOR_MODULES"] = "ON"
+            cmake_extra_variables["CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES"] = "1942b4fa-b2c5-4546-9385-83f254070067"
+
+        self.conf_info.update(
+            "tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
 
@@ -455,6 +516,18 @@ class LLVMToolchainPackage(ConanFile):
         del self.info.options.function_sections
         del self.info.options.data_sections
         del self.info.options.gc_sections
+        del self.info.options.require_cmake
+        del self.info.options.require_ninja
         # Remove any compiler or build_type settings from recipe hash
         del self.info.settings.compiler
         del self.info.settings.build_type
+
+        # Normalize Cortex-M variants to share the same package_id
+        if self.settings_target:
+            target_arch = str(self.settings_target.get_safe("arch") or "")
+            target_os = str(self.settings_target.get_safe("os") or "")
+
+            # All Cortex-M variants use the SAME binary - normalize them
+            if target_os == "baremetal" and target_arch.startswith("cortex-m"):
+                # Use conf system to modify the hash for the package ID
+                self.info.conf.define("user.llvm:target_family", "cortex-m")

@@ -20,11 +20,12 @@ main()
   return 0;
 }
 
+// Test Native testing
+//
+//    VERBOSE=1 conan test all/test_package llvm-toolchain/20
+//
 // Use arm embedded to build stm32f103c8
 //
-//    VERBOSE=1 conan test -pr stm32f103c8 -pr hal/tc/llvm-19.1.5 all/
-//    test_package llvm-toolchain/19.1.5
+//    VERBOSE=1 conan test -pr stm32f103c8 -pr hal/tc/llvm-20 all/
+//    test_package llvm-toolchain/20
 //
-// Test Native building using x64 binary to cross build to armv8
-//
-//    VERBOSE=1 conan test all/test_package llvm-toolchain/19.1.5

@@ -1,3 +1,5 @@
 **/build/*
 **/CMakeUserPresets.json
 .DS_Store
+compile_commands.json
+delete-later/*
