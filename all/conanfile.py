@@ -38,8 +38,6 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": [True, False],
         "data_sections": [True, False],
         "gc_sections": [True, False],
-        "require_cmake": [True, False],
-        "require_ninja": [True, False],
         "use_semihosting": [True, False],
     }
 
@@ -50,8 +48,6 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": True,
         "data_sections": True,
         "gc_sections": True,
-        "require_cmake": True,
-        "require_ninja": True,
         "use_semihosting": True
     }
 
@@ -59,12 +55,9 @@ class LLVMToolchainPackage(ConanFile):
         "default_arch": "Automatically inject architecture-appropriate -target and -mcpu arguments into compilation flags.",
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
         "default_linker_script": "Automatically specify what the default linker script in order to allow projects without a linker script to link without error. If the user specifies their own linker script(s) via the -T argument, that default linker script will be ignored and the supplied linker script(s) will be used. Disabling this flag is not necessary when building applications with custom linker scripts. Only use this if you have multiple custom linker scripts and a default linker script you'd like to override against the supplied one from this toolchain library.",
-        "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
         "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled.",
-        "require_cmake": "Automatically add cmake/[^4.1.2] as a transitive build requirement.",
-        "require_ninja": "Automatically add ninja/[^1.13.1] as a transitive build requirement and configure CMake to use Ninja as the generator.",
         "use_semihosting": "Inject command line flags to enable semihosting for your architecture. This is only used when the os=baremetal.",
     }
 
@@ -115,12 +108,6 @@ class LLVMToolchainPackage(ConanFile):
                 raise ConanInvalidConfiguration(
                     f"Version {self.version} is not defined in conandata.yml"
                 )
-
-    def build_requirements(self):
-        if self.options.require_cmake:
-            self.tool_requires("cmake/[>=3.28.0 <5.0.0]", visible=True)
-        if self.options.require_ninja:
-            self.tool_requires("ninja/[^1.0.0]", visible=True)
 
     def source(self):
         pass
@@ -477,11 +464,6 @@ class LLVMToolchainPackage(ConanFile):
             "asm": "clang",
         })
 
-        # Configure Ninja as CMake generator if required
-        if self.options.require_ninja:
-            self.conf_info.define(
-                "tools.cmake.cmaketoolchain:generator", "Ninja")
-
         # Add CMake utility tools
         cmake_extra_variables = {
             "CMAKE_OBJCOPY": "llvm-objcopy",
@@ -489,12 +471,9 @@ class LLVMToolchainPackage(ConanFile):
             "CMAKE_OBJDUMP": "llvm-objdump",
             "CMAKE_AR": "llvm-ar",
             "CMAKE_RANLIB": "llvm-ranlib",
+            "CMAKE_CXX_SCAN_FOR_MODULES": "ON",
+            "CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES": "1942b4fa-b2c5-4546-9385-83f254070067",
         }
-
-        # Add C++ modules support if cmake and ninja are required
-        if self.options.require_cmake and self.options.require_ninja:
-            cmake_extra_variables["CMAKE_CXX_SCAN_FOR_MODULES"] = "ON"
-            cmake_extra_variables["CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES"] = "1942b4fa-b2c5-4546-9385-83f254070067"
 
         self.conf_info.update(
             "tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
@@ -523,8 +502,6 @@ class LLVMToolchainPackage(ConanFile):
         del self.info.options.function_sections
         del self.info.options.data_sections
         del self.info.options.gc_sections
-        del self.info.options.require_cmake
-        del self.info.options.require_ninja
         del self.info.options.use_semihosting
         # Remove any compiler or build_type settings from recipe hash
         del self.info.settings.compiler

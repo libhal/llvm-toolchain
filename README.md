@@ -20,7 +20,7 @@ architectures.
 ## 🧩 C++20 Modules Support
 
 This toolchain includes **full C++20 modules support** out of the box when using
-CMake and Ninja (enabled by default via `require_cmake` and `require_ninja` options).
+CMake and Ninja. The provided profiles include cmake and ninja as tool requirements.
 
 ### CMake Example
 
@@ -140,11 +140,19 @@ compiler.version=20
 
 [tool_requires]
 llvm-toolchain/20
+cmake/[>=3.28.0 <5.0.0]
+ninja/[^1.0.0]
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
 ```
 
 By adding `llvm-toolchain/20` to your profile, every dependency will use
 this toolchain for compilation. The tool package should NOT be directly added
 to an application's `conanfile.py`.
+
+CMake and Ninja are recommended tool requirements for C++20 modules support and
+modern build features. You can customize or omit these in your own profiles if needed.
 
 Note that the profile above is missing the following settings:
 
@@ -243,8 +251,6 @@ llvm-toolchain/*:lto=True
 llvm-toolchain/*:data_sections=True
 llvm-toolchain/*:function_sections=True
 llvm-toolchain/*:gc_sections=True
-llvm-toolchain/*:require_cmake=True
-llvm-toolchain/*:require_ninja=True
 llvm-toolchain/*:use_semihosting=True
 ```
 
@@ -294,33 +300,6 @@ garbage collection at link time.
 ### `gc_sections` (Default: `True`)
 
 Enable `--gc-sections` linker flag for garbage collection of unused sections.
-
-### `require_cmake` (Default: `True`)
-
-Automatically add `cmake/[^4.1.2]` as a transitive build requirement. This ensures
-that CMake is available for building projects that use the LLVM toolchain.
-
-When enabled, the toolchain will also set the following CMake variables (when
-`require_ninja` is also enabled):
-
-- `CMAKE_CXX_SCAN_FOR_MODULES`: Enables C++20 modules support
-- `CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES`: Enables experimental package
-  dependency export features
-
-Users can disable this option in build profiles if they want to manage CMake
-versions themselves.
-
-### `require_ninja` (Default: `True`)
-
-Automatically add `ninja/[^1.13.1]` as a transitive build requirement and
-configure CMake to use Ninja as the generator.
-
-When enabled, the toolchain will set:
-
-- CMake generator to "Ninja" via `tools.cmake.cmaketoolchain:generator`
-
-Users can disable this option in build profiles if they want to use a different
-build system or manage Ninja versions themselves.
 
 ### `use_semihosting` (Default: `True`)
 
