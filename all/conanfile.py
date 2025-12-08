@@ -40,6 +40,7 @@ class LLVMToolchainPackage(ConanFile):
         "gc_sections": [True, False],
         "require_cmake": [True, False],
         "require_ninja": [True, False],
+        "use_semihosting": [True, False],
     }
 
     default_options = {
@@ -51,6 +52,7 @@ class LLVMToolchainPackage(ConanFile):
         "gc_sections": True,
         "require_cmake": True,
         "require_ninja": True,
+        "use_semihosting": True
     }
 
     options_description = {
@@ -62,7 +64,8 @@ class LLVMToolchainPackage(ConanFile):
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
         "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled.",
         "require_cmake": "Automatically add cmake/[^4.1.2] as a transitive build requirement.",
-        "require_ninja": "Automatically add ninja/[^1.13.1] as a transitive build requirement and configure CMake to use Ninja as the generator."
+        "require_ninja": "Automatically add ninja/[^1.13.1] as a transitive build requirement and configure CMake to use Ninja as the generator.",
+        "use_semihosting": "Inject command line flags to enable semihosting for your architecture. This is only used when the os=baremetal.",
     }
 
     def validate(self):
@@ -141,8 +144,8 @@ class LLVMToolchainPackage(ConanFile):
         TARGET_OS = self.settings_target.get_safe("os")
         TARGET_ARCH = self.settings_target.get_safe("arch")
 
-        self.output.warning(
-            f"TARGET_OS:{TARGET_OS}, TARGET_ARCH:{TARGET_ARCH}")
+        self.output.info(
+            f"host: os: '{TARGET_OS}', architecture: '{TARGET_ARCH}'")
 
         # ARM Cortex-M baremetal gets special ARM Embedded Toolchain
         if TARGET_OS == "baremetal" and TARGET_ARCH in [
@@ -178,12 +181,12 @@ class LLVMToolchainPackage(ConanFile):
         # Copy contents from LLVM directory to package folder
         PATHS = Path(self.build_folder).glob("LLVM-*")
         for path in PATHS:
-            self.output.warning(f"📁 COPYING Contents of {path}")
+            self.output.info(f"📁 COPYING Contents of {path}")
             copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
         # Copy contents from LLVM directory to package folder
         PATHS = Path(self.build_folder).glob("ATfE-*")
         for path in PATHS:
-            self.output.warning(f"📁 COPYING Contents of {path}")
+            self.output.info(f"📁 COPYING Contents of {path}")
             copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
 
         # Detach DMG
@@ -385,6 +388,10 @@ class LLVMToolchainPackage(ConanFile):
                 cxx_flags.append(fpu_flag)
                 exelinkflags.append(fpu_flag)
 
+        if self.options.use_semihosting:
+            SEMIHOST = ["-nostartfiles", "-lcrt0-semihost", "-lsemihost"]
+            exelinkflags.extend(SEMIHOST)
+
         self.output.info(f'c_flags: {c_flags}')
         self.output.info(f'cxx_flags: {cxx_flags}')
         self.output.info(f'exelinkflags: {exelinkflags}')
@@ -518,6 +525,7 @@ class LLVMToolchainPackage(ConanFile):
         del self.info.options.gc_sections
         del self.info.options.require_cmake
         del self.info.options.require_ninja
+        del self.info.options.use_semihosting
         # Remove any compiler or build_type settings from recipe hash
         del self.info.settings.compiler
         del self.info.settings.build_type

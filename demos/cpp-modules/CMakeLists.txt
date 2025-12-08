@@ -9,10 +9,12 @@ add_executable(demo)
 target_sources(demo PUBLIC
     FILE_SET CXX_MODULES
     TYPE CXX_MODULES
-    FILES module.cppm
+
+    FILES
+    module.cppm
+
     PRIVATE
     main.cpp
-    stdio_polyfill.cpp
 )
 
 if(NOT ${CMAKE_CROSSCOMPILING})
