@@ -245,6 +245,7 @@ llvm-toolchain/*:function_sections=True
 llvm-toolchain/*:gc_sections=True
 llvm-toolchain/*:require_cmake=True
 llvm-toolchain/*:require_ninja=True
+llvm-toolchain/*:use_semihosting=True
 ```
 
 ### `default_arch` (Default: `True`)
@@ -320,6 +321,25 @@ When enabled, the toolchain will set:
 
 Users can disable this option in build profiles if they want to use a different
 build system or manage Ninja versions themselves.
+
+### `use_semihosting` (Default: `True`)
+
+Enable semihosting support for baremetal targets (ARM Cortex-M). When enabled,
+the toolchain will link against the semihosting libraries, allowing your
+application to use `printf`, `scanf`, and other standard I/O functions through
+the debugger connection.
+
+This option adds the following linker flags:
+
+- `-nostartfiles`: Skip default startup files
+- `-lcrt0-semihost`: Use semihosting startup code
+- `-lsemihost`: Link semihosting library
+
+> [!NOTE]
+> This option only applies when `os=baremetal`.
+
+Users may disable this option if they're implementing their own I/O system or
+don't need semihosting functionality.
 
 ## 🎯 Supported ARM Cortex-M Targets
 
