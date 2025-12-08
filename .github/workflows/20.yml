@@ -42,7 +42,7 @@ jobs:
       os: ubuntu-24.04-arm
       demo_profile: linux_arm
 
-  verify_macos-15-intel:
+  verify-macos-15-intel:
     uses: ./.github/workflows/verify.yml
     with:
       version: ${{ inputs.VERSION }}
@@ -116,6 +116,7 @@ jobs:
     needs:
       - verify-linux-x86_64
       - verify-linux-arm
+      - verify-macos-15-intel
       - verify-macos-15-arm
       - verify-windows-x86_64
       - verify-windows-arm

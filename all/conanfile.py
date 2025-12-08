@@ -144,8 +144,8 @@ class LLVMToolchainPackage(ConanFile):
         TARGET_OS = self.settings_target.get_safe("os")
         TARGET_ARCH = self.settings_target.get_safe("arch")
 
-        self.output.warning(
-            f"TARGET_OS:{TARGET_OS}, TARGET_ARCH:{TARGET_ARCH}")
+        self.output.info(
+            f"host: os: '{TARGET_OS}', architecture: '{TARGET_ARCH}'")
 
         # ARM Cortex-M baremetal gets special ARM Embedded Toolchain
         if TARGET_OS == "baremetal" and TARGET_ARCH in [
@@ -181,12 +181,12 @@ class LLVMToolchainPackage(ConanFile):
         # Copy contents from LLVM directory to package folder
         PATHS = Path(self.build_folder).glob("LLVM-*")
         for path in PATHS:
-            self.output.warning(f"📁 COPYING Contents of {path}")
+            self.output.info(f"📁 COPYING Contents of {path}")
             copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
         # Copy contents from LLVM directory to package folder
         PATHS = Path(self.build_folder).glob("ATfE-*")
         for path in PATHS:
-            self.output.warning(f"📁 COPYING Contents of {path}")
+            self.output.info(f"📁 COPYING Contents of {path}")
             copy(self, "**", src=path, dst=self.package_folder, keep_path=True)
 
         # Detach DMG
