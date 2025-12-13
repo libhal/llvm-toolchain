@@ -204,12 +204,25 @@ class LLVMToolchainPackage(ConanFile):
                 "Macos_x86_64": "b450c31e94987fc0e3a0c568426f0726fdc0b3f10911ebc25e96984b3cf4f282",
                 "Windows_armv8": "bf4cbaff98506e326f312a3da0fc4c345fc77055fd4cf8872de788d19d005430",
                 "Windows_x86_64": "371c9e9140e63dacbd4e626a41c421e09e46fd17d3930b0d315072140ef0c6a9",
-            }
+            },
+            "21": {
+                "Linux_armv8": "f9588074f1c0338047e92659e38c7c0c5791e3c687746e46355f289d1206dd75",
+                "Linux_x86_64": "db7ee343703121b750a7e3aa5e7450a8ef479232951b1c7fbdd866fa19538de7",
+                "Macos_armv8": "487bf049e3b58ec8bf012783934463e38a04fe93a9b97ac9b13d3635f7832ad4",
+                "Macos_x86_64": "missing",
+                "Windows_armv8": "38e3d58b391e02cc687b6a8b93576897141acc1de44d2de68a7797cc9dd3135f",
+                "Windows_x86_64": "4a15e4b865216fb169790b8f10b12f682fa7eb5b558987ca75abd1d8f4ae1fed",
+            },
         }
 
-        LLVM_POLYFILL_URL_BASE = f"https://github.com/libhal/llvm-toolchain/releases/download/llvm-{self.version}-polyfill"
         BUILD = f"{build_os}_{build_arch}"
+        SHA = CLANG_SCAN_DEPS_SHA256[self.version][BUILD]
+        LLVM_POLYFILL_URL_BASE = f"https://github.com/libhal/llvm-toolchain/releases/download/llvm-{self.version}-polyfill"
         URL = f"{LLVM_POLYFILL_URL_BASE}/{BUILD}-clang-scan-deps"
+
+        if SHA == "missing":
+            self.output.warning(f"No clang-scan-deps is missing for {BUILD}")
+            return
 
         if build_os == "Windows":
             FINAL_FILE_NAME = "clang-scan-deps.exe"
@@ -218,9 +231,8 @@ class LLVMToolchainPackage(ConanFile):
 
         SCAN_DEPS_FILE_DESTINATION = Path(
             self.package_folder) / "bin" / FINAL_FILE_NAME
-        download(self, URL,
-                 sha256=CLANG_SCAN_DEPS_SHA256[self.version][BUILD],
-                 filename=SCAN_DEPS_FILE_DESTINATION)
+
+        download(self, URL, sha256=SHA, filename=SCAN_DEPS_FILE_DESTINATION)
         chmod(self, SCAN_DEPS_FILE_DESTINATION, execute=True)
 
     def package(self):

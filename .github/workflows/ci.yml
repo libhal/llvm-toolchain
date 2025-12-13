@@ -24,7 +24,12 @@ on:
       - main
 
 jobs:
-  ci_20:
-    uses: ./.github/workflows/20.yml
+  # ci_20:
+  #   uses: ./.github/workflows/20.yml
+  #   with:
+  #     upload: false
+
+  ci_21:
+    uses: ./.github/workflows/21.yml
     with:
       upload: false

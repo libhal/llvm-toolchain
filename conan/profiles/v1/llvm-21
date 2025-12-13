@@ -1,0 +1,13 @@
+[settings]
+compiler=clang
+compiler.cppstd=23
+compiler.libcxx=libc++
+compiler.version=21
+
+[tool_requires]
+llvm-toolchain/21
+cmake/[>=3.28.0 <5.0.0]
+ninja/[^1.0.0]
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
