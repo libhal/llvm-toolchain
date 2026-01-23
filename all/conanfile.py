@@ -495,6 +495,25 @@ class LLVMToolchainPackage(ConanFile):
                     self.setup_arm_cortex_m()
 
     def package_id(self):
-        # Clear everything - this is a recipe-only package
-        # Users build locally by downloading binaries for their platform
-        self.info.clear()
+        # All options should be removed as none of them should impact the
+        # package id hash. These options are only used for delivering command
+        # line arguments via the package_info.
+        del self.info.options.default_arch
+        del self.info.options.lto
+        del self.info.options.function_sections
+        del self.info.options.data_sections
+        del self.info.options.gc_sections
+        del self.info.options.use_semihosting
+        # Remove any compiler or build_type settings from recipe hash
+        del self.info.settings.compiler
+        del self.info.settings.build_type
+
+        # Normalize Cortex-M variants to share the same package_id
+        if self.settings_target:
+            target_arch = str(self.settings_target.get_safe("arch") or "")
+            target_os = str(self.settings_target.get_safe("os") or "")
+
+            # All Cortex-M variants use the SAME binary - normalize them
+            if target_os == "baremetal" and target_arch.startswith("cortex-m"):
+                # Use conf system to modify the hash for the package ID
+                self.info.conf.define("user.llvm:target_family", "cortex-m")
