@@ -126,13 +126,13 @@ class LLVMToolchainPackage(ConanFile):
         # This will set the settings_target which will download the appropriate
         # fork of LLVM for that architecture.
         if not self.settings_target:
-            self.output.info("Using upstream LLVM binary")
+            self.output.debug("Using upstream LLVM binary")
             return "upstream"
 
         TARGET_OS = self.settings_target.get_safe("os")
         TARGET_ARCH = self.settings_target.get_safe("arch")
 
-        self.output.info(
+        self.output.debug(
             f"host: os: '{TARGET_OS}', architecture: '{TARGET_ARCH}'")
 
         # ARM Cortex-M baremetal gets special ARM Embedded Toolchain
@@ -144,7 +144,7 @@ class LLVMToolchainPackage(ConanFile):
             "cortex-m35p", "cortex-m35pf",
             "cortex-m55", "cortex-m85",
         ]:
-            self.output.info("Using ARM Embedded LLVM fork")
+            self.output.debug("Using ARM Embedded LLVM fork")
             return "arm-embedded"
 
         # Everything else uses regular LLVM
@@ -153,7 +153,7 @@ class LLVMToolchainPackage(ConanFile):
         # - AVR (avr)
         # - Other ARM variants (cortex-a, etc.)
         # - Host builds
-        self.output.info("Using upstream LLVM binary")
+        self.output.debug("Using upstream LLVM binary")
         return "upstream"
 
     def _extract_macos_dmg(self, url: str, sha256: str):
@@ -498,22 +498,11 @@ class LLVMToolchainPackage(ConanFile):
         # All options should be removed as none of them should impact the
         # package id hash. These options are only used for delivering command
         # line arguments via the package_info.
-        del self.info.options.default_arch
-        del self.info.options.lto
-        del self.info.options.function_sections
-        del self.info.options.data_sections
-        del self.info.options.gc_sections
-        del self.info.options.use_semihosting
-        # Remove any compiler or build_type settings from recipe hash
-        del self.info.settings.compiler
-        del self.info.settings.build_type
+        self.info.options.clear()
 
-        # Normalize Cortex-M variants to share the same package_id
-        if self.settings_target:
-            target_arch = str(self.settings_target.get_safe("arch") or "")
-            target_os = str(self.settings_target.get_safe("os") or "")
+        # Clear all settings - only the variant matters
+        self.info.settings.clear()
 
-            # All Cortex-M variants use the SAME binary - normalize them
-            if target_os == "baremetal" and target_arch.startswith("cortex-m"):
-                # Use conf system to modify the hash for the package ID
-                self.info.conf.define("user.llvm:target_family", "cortex-m")
+        # Only keep the variant in the package_id
+        variant = self._determine_llvm_variant()
+        self.info.conf.define("user.llvm:variant", variant)
