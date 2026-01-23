@@ -29,6 +29,7 @@ class LLVMToolchainPackage(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
     package_type = "application"
     build_policy = "missing"
+    upload_policy = "skip"
     short_paths = True
 
     options = {
