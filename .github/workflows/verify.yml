@@ -78,3 +78,11 @@ jobs:
       - name: 📦 Build Demos Conan Package
         if: ${{ runner.os == 'Windows' }}
         run: conan build demos/cpp-modules -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
+
+      - name: ⚙️ Build ninja for build platform from scratch
+        if: ${{ runner.os != 'Windows' }}
+        run: VERBOSE=1 conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -pr:a ${{ inputs.demo_profile }}
+
+      - name: ⚙️ Build ninja for build platform from scratch
+        if: ${{ runner.os == 'Windows' }}
+        run: conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -pr:a ${{ inputs.demo_profile }}

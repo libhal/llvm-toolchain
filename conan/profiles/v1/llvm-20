@@ -4,6 +4,8 @@ compiler.cppstd=23
 compiler.libcxx=libc++
 compiler.version=20
 
+{% if context == "host" %}
+
 [tool_requires]
 llvm-toolchain/20
 cmake/[>=3.28.0 <5.0.0]
@@ -11,3 +13,10 @@ ninja/[^1.0.0]
 
 [conf]
 tools.cmake.cmaketoolchain:generator=Ninja
+
+{% elif context == "build" %}
+
+[tool_requires]
+!llvm-toolchain/*:llvm-toolchain/20,cmake/[>=3.28.0 <5.0.0]
+
+{% endif %}

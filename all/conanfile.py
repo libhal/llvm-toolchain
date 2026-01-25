@@ -463,16 +463,29 @@ class LLVMToolchainPackage(ConanFile):
             "c": "clang",
             "cpp": "clang++",
             "asm": "clang",
+            "ar": "llvm-ar",
+            "ld": "lld",
+            "nm": "llvm-nm",
+            "objcopy": "llvm-objcopy",
+            "objdump": "llvm-objdump",
+            "ranlib": "llvm-ranlib",
+            "strip": "llvm-strip",
         })
 
-        # Add CMake utility tools
+        # Add CMake compiler and utility tools
         cmake_extra_variables = {
-            "CMAKE_OBJCOPY": "llvm-objcopy",
-            "CMAKE_SIZE_UTIL": "llvm-size",
-            "CMAKE_OBJDUMP": "llvm-objdump",
+            "CMAKE_C_COMPILER": "clang",
+            "CMAKE_CXX_COMPILER": "clang++",
+            "CMAKE_ASM_COMPILER": "clang",
+            "CMAKE_LINKER": "lld",
             "CMAKE_AR": "llvm-ar",
+            "CMAKE_NM": "llvm-nm",
+            "CMAKE_OBJCOPY": "llvm-objcopy",
+            "CMAKE_OBJDUMP": "llvm-objdump",
             "CMAKE_RANLIB": "llvm-ranlib",
-            "CMAKE_CXX_SCAN_FOR_MODULES": "ON",
+            "CMAKE_STRIP": "llvm-strip",
+            "CMAKE_SIZE_UTIL": "llvm-size",
+            "CMAKE_ADDR2LINE": "llvm-addr2line",
             "CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES": "1942b4fa-b2c5-4546-9385-83f254070067",
         }
 
@@ -480,6 +493,20 @@ class LLVMToolchainPackage(ConanFile):
             "tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
+        self.buildenv_info.define("CC", "clang")
+        self.buildenv_info.define("CXX", "clang++")
+        self.buildenv_info.define("AS", "clang")
+        self.buildenv_info.define("AR", "llvm-ar")
+        self.buildenv_info.define("LD", "lld")
+        self.buildenv_info.define("NM", "llvm-nm")
+        self.buildenv_info.define("OBJCOPY", "llvm-objcopy")
+        self.buildenv_info.define("OBJDUMP", "llvm-objdump")
+        self.buildenv_info.define("RANLIB", "llvm-ranlib")
+        self.buildenv_info.define("SIZE", "llvm-size")
+        self.buildenv_info.define("STRINGS", "llvm-strings")
+        self.buildenv_info.define("STRIP", "llvm-strip")
+        self.buildenv_info.define("ADDR2LINE", "llvm-addr2line")
+        self.buildenv_info.define("GDB", "lldb")
 
         if self.settings_target:
             self.add_common_flags()
