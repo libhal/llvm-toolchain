@@ -25,9 +25,15 @@ on:
       os:
         type: string
         required: true
-      demo_profile:
+      host_profile:
         type: string
         required: true
+      build_profile:
+        type: string
+        required: true
+
+env:
+  VERBOSE: "1"
 
 jobs:
   verify:
@@ -61,28 +67,13 @@ jobs:
         run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
       - name: 📦 Create Conan Package
-        run: conan create all -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.demo_profile }} --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=ninja --build=missing:ninja/* -c tools.build:skip_test=True
+        run: conan create all -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.host_profile }} --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=ninja --build=missing:ninja/* -c tools.build:skip_test=True
 
       - name: 📦 Build Demos Conan Package
-        if: ${{ runner.os != 'Windows' }}
-        run: VERBOSE=1 conan build demos/cpp -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
+        run: conan build demos/cpp -pr llvm-${{ inputs.version }} -pr ${{ inputs.host_profile }}
 
       - name: 📦 Build Demos Conan Package
-        if: ${{ runner.os == 'Windows' }}
-        run: conan build demos/cpp -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
-
-      - name: 📦 Build Demos Conan Package
-        if: ${{ runner.os != 'Windows' }}
-        run: VERBOSE=1 conan build demos/cpp-modules -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
-
-      - name: 📦 Build Demos Conan Package
-        if: ${{ runner.os == 'Windows' }}
-        run: conan build demos/cpp-modules -pr llvm-${{ inputs.version }} -pr ${{ inputs.demo_profile }}
+        run: conan build demos/cpp-modules -pr llvm-${{ inputs.version }} -pr ${{ inputs.host_profile }}
 
       - name: ⚙️ Build ninja for build platform from scratch
-        if: ${{ runner.os != 'Windows' }}
-        run: VERBOSE=1 conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -pr:a ${{ inputs.demo_profile }}
-
-      - name: ⚙️ Build ninja for build platform from scratch
-        if: ${{ runner.os == 'Windows' }}
-        run: conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -pr:a ${{ inputs.demo_profile }}
+        run: conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -pr:b ${{ inputs.build_profile }}
