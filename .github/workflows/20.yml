@@ -34,8 +34,6 @@ jobs:
       display_name: Linux x86_64
       version: ${{ inputs.VERSION }}
       os: ubuntu-24.04
-      host_profile: linux_x86_64
-      build_profile: linux_x86_64
 
   verify-linux-arm:
     uses: ./.github/workflows/verify.yml
@@ -43,8 +41,6 @@ jobs:
       display_name: Linux ARM
       version: ${{ inputs.VERSION }}
       os: ubuntu-24.04-arm
-      host_profile: linux_arm
-      build_profile: linux_arm
 
   verify-macos-15-intel:
     uses: ./.github/workflows/verify.yml
@@ -52,8 +48,6 @@ jobs:
       display_name: macOS 15 Intel
       version: ${{ inputs.VERSION }}
       os: macos-15-intel
-      host_profile: macos_x86_64
-      build_profile: macos_x86_64
 
   verify-macos-15-arm:
     uses: ./.github/workflows/verify.yml
@@ -61,8 +55,6 @@ jobs:
       display_name: macOS 15 ARM
       version: ${{ inputs.VERSION }}
       os: macos-15
-      host_profile: macos_arm
-      build_profile: macos_arm
 
   verify-windows-x86_64:
     uses: ./.github/workflows/verify.yml
@@ -70,8 +62,6 @@ jobs:
       display_name: Windows x86_64
       version: ${{ inputs.VERSION }}
       os: windows-latest
-      host_profile: windows_x86_64
-      build_profile: windows_x86_64
 
   verify-windows-arm:
     uses: ./.github/workflows/verify.yml
@@ -79,8 +69,6 @@ jobs:
       display_name: Windows ARM
       version: ${{ inputs.VERSION }}
       os: windows-11-arm
-      host_profile: windows_arm
-      build_profile: windows_arm
 
   verify-linux-x86_64-cortex-m4f:
     uses: ./.github/workflows/verify.yml
@@ -89,7 +77,6 @@ jobs:
       version: ${{ inputs.VERSION }}
       os: ubuntu-24.04
       host_profile: cortex-m4f
-      build_profile: linux_x86_64
 
   verify-linux-arm-cortex-m4:
     uses: ./.github/workflows/verify.yml
@@ -98,7 +85,6 @@ jobs:
       version: ${{ inputs.VERSION }}
       os: ubuntu-24.04-arm
       host_profile: cortex-m4
-      build_profile: linux_arm
 
   verify-macos-14-arm-cortex-m4f:
     uses: ./.github/workflows/verify.yml
@@ -107,7 +93,6 @@ jobs:
       version: ${{ inputs.VERSION }}
       os: macos-14
       host_profile: cortex-m4f
-      build_profile: macos_arm
 
   verify-macos-15-arm-cortex-m4f:
     uses: ./.github/workflows/verify.yml
@@ -116,7 +101,6 @@ jobs:
       version: ${{ inputs.VERSION }}
       os: macos-15
       host_profile: cortex-m4f
-      build_profile: macos_arm
 
   verify-macos-15-intel-cortex-m4f:
     uses: ./.github/workflows/verify.yml
@@ -125,7 +109,6 @@ jobs:
       version: ${{ inputs.VERSION }}
       os: macos-15-intel
       host_profile: cortex-m4f
-      build_profile: macos_x86_64
 
   verify-windows-x86_64-cortex-m33f:
     uses: ./.github/workflows/verify.yml
@@ -134,7 +117,6 @@ jobs:
       version: ${{ inputs.VERSION }}
       os: windows-latest
       host_profile: cortex-m33f
-      build_profile: windows_x86_64
 
   upload-package:
     needs:

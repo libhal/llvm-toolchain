@@ -1,3 +1,5 @@
+include(default)
+
 [settings]
 compiler=clang
 compiler.cppstd=23

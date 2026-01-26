@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.40)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 
 project(demo LANGUAGES CXX)
 

@@ -30,10 +30,7 @@ on:
         required: true
       host_profile:
         type: string
-        required: true
-      build_profile:
-        type: string
-        required: true
+        default: ""
 
 env:
   VERBOSE: "1"
@@ -45,6 +42,8 @@ jobs:
       fail-fast: false
 
     runs-on: ${{ inputs.os }}
+    env:
+      HOST_PROFILE: ${{ inputs.host_profile && format('-pr {0}', inputs.host_profile) || '' }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -70,14 +69,19 @@ jobs:
       - name: 📡 Install local toolchain profiles
         run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
-      - name: 📦 Create Conan Package
-        run: conan create all -pr:b default -pr:h llvm-${{ inputs.version }} -pr:h ${{ inputs.host_profile }} --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=ninja --build=missing:ninja/* -c tools.build:skip_test=True
+      - name: 📦 Create LLVM Toolchain Package (native build)
+        if: ${{ inputs.host_profile == '' }}
+        run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=ninja --build=missing:ninja/*
 
-      - name: 📦 Build Demos Conan Package
-        run: conan build demos/cpp -pr llvm-${{ inputs.version }} -pr ${{ inputs.host_profile }}
+      - name: 📦 Create LLVM Toolchain Package (cross build)
+        if: ${{ inputs.host_profile != '' }}
+        run: conan create all -pr:a llvm-${{ inputs.version }} $HOST_PROFILE --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=ninja --build=missing:ninja/*
 
-      - name: 📦 Build Demos Conan Package
-        run: conan build demos/cpp-modules -pr llvm-${{ inputs.version }} -pr ${{ inputs.host_profile }}
+      - name: 📦 Build C++ demo using  LLVM toolchain
+        run: conan build demos/cpp -pr:a llvm-${{ inputs.version }} $HOST_PROFILE
+
+      - name: 📦 Build C++ modules demo using LLVM toolchain
+        run: conan build demos/cpp-modules -pr:a llvm-${{ inputs.version }} $HOST_PROFILE
 
       - name: ⚙️ Build ninja for build platform from scratch
-        run: conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -pr:b ${{ inputs.build_profile }}
+        run: conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }}
