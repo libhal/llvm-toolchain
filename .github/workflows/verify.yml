@@ -19,6 +19,9 @@ name: 🔍 Verify
 on:
   workflow_call:
     inputs:
+      display_name:
+        type: string
+        required: true
       version:
         type: string
         required: true
@@ -37,6 +40,7 @@ env:
 
 jobs:
   verify:
+    name: ${{ inputs.display_name }}
     strategy:
       fail-fast: false
 
