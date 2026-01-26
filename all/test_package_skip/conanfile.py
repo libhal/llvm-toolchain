@@ -20,6 +20,8 @@ class TestPackageConan(ConanFile):
         tc = CMakeToolchain(self)
         tc.generator = "Unix Makefiles"
         tc.generate()
+        if self.settings.os == "Windows":
+            tc.cache_variables["CMAKE_MSVC_RUNTIME_LIBRARY"] = ""
 
         deps = CMakeDeps(self)
         deps.generate()

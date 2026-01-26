@@ -77,8 +77,14 @@ jobs:
         if: ${{ inputs.host_profile != '' }}
         run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* -pr:h llvm-${{ inputs.version }} $HOST_PROFILE --build=make --build=missing:make/* -c tools.build:skip_test=True
 
+      # Windows requires this setting which we do not specify. We get the
+      # following conan error: "Visual Studio Runtime version (v140-v145) not
+      # defined. Please, add the compiler. runtime_version=[v140-v145] setting
+      # to your profile."
       - name: ⚙️ Build/Install ninja from scratch using LLVM for build platform
-        run: conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }}
+        if: ${{ runner.os != 'Windows' }}
+        run: >
+          conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -c tools.cmake.cmaketoolchain:extra_variables="{'CMAKE_MSVC_RUNTIME_LIBRARY': ''}"
 
       - name: 📦 Build C++ demo using  LLVM toolchain
         run: conan build demos/cpp -pr:a llvm-${{ inputs.version }} $HOST_PROFILE

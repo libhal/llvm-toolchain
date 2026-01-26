@@ -10,7 +10,7 @@ class BasicCppConan(ConanFile):
         pass
 
     def build_requirements(self):
-        self.tool_requires("ninja/[^1.0.0]")
+        self.tool_requires("ninja/1.13.2")
         self.tool_requires("cmake/[>=3.28.0 <5.0.0]")
 
     def layout(self):
@@ -19,6 +19,8 @@ class BasicCppConan(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
         tc.generator = "Ninja"
+        if self.settings.os == "Windows":
+            tc.cache_variables["CMAKE_MSVC_RUNTIME_LIBRARY"] = ""
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()

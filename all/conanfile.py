@@ -428,6 +428,10 @@ class LLVMToolchainPackage(ConanFile):
     def setup_linux(self):
         self.cpp_info.libdirs = []
 
+        # Explicitly set system name for CMake
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Linux")
+
         library_path = ""
         if self.settings.arch == "x86_64":
             library_path = self._lib_path / "x86_64-unknown-linux-gnu"
@@ -454,9 +458,18 @@ class LLVMToolchainPackage(ConanFile):
         # unused.
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
+        # Ensure CMake knows this is a Windows build, not a freestanding/embedded
+        # build. Without this, CMake may add -nostartfiles -nostdlib flags.
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Windows")
+
     def setup_mac_osx(self):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
+
+        # Explicitly set system name for CMake
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Darwin")
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
@@ -508,17 +521,31 @@ class LLVMToolchainPackage(ConanFile):
         self.buildenv_info.define("ADDR2LINE", "llvm-addr2line")
         self.buildenv_info.define("GDB", "lldb")
 
+        # Determine which OS we're targeting
+        target_os = None
+        target_arch = None
         if self.settings_target:
+            target_os = self.settings_target.get_safe('os')
+            target_arch = self.settings_target.get_safe('arch')
+        else:
+            # Native build - target is same as host
+            target_os = str(self.settings.os)
+            target_arch = str(self.settings.arch)
+
+        if target_os:
             self.add_common_flags()
-            if self.settings_target.get_safe('os') == 'Macos':
+            if target_os == 'Macos':
+                self.output.warning("Macos")
                 self.setup_mac_osx()
-            elif self.settings_target.get_safe('os') == 'Linux':
+            elif target_os == 'Linux':
+                self.output.warning("Linux")
                 self.setup_linux()
-            elif self.settings_target.get_safe('os') == 'Windows':
+            elif target_os == 'Windows':
+                self.output.warning("Windows")
                 self.setup_windows()
-            elif self.settings_target.get_safe('os') == 'baremetal':
-                ARCH = str(self.settings_target.get_safe('arch'))
-                if ARCH.startswith('cortex-m'):
+            elif target_os == 'baremetal':
+                if target_arch and target_arch.startswith('cortex-m'):
+                    self.output.warning("setup_arm_cortex_m")
                     self.setup_arm_cortex_m()
 
     def package_id(self):
