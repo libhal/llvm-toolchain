@@ -23,6 +23,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci_20:
     uses: ./.github/workflows/20.yml

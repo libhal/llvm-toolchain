@@ -428,6 +428,10 @@ class LLVMToolchainPackage(ConanFile):
     def setup_linux(self):
         self.cpp_info.libdirs = []
 
+        # Explicitly set system name for CMake
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Linux")
+
         library_path = ""
         if self.settings.arch == "x86_64":
             library_path = self._lib_path / "x86_64-unknown-linux-gnu"
@@ -454,25 +458,46 @@ class LLVMToolchainPackage(ConanFile):
         # unused.
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
+        # Ensure CMake knows this is a Windows build
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Windows")
+
     def setup_mac_osx(self):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
+
+        # Ensure CMake knows this is a Mac/Darwin build
+        self.conf_info.define(
+            "tools.cmake.cmaketoolchain:system_name", "Darwin")
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
             "c": "clang",
             "cpp": "clang++",
             "asm": "clang",
+            "ar": "llvm-ar",
+            "ld": "lld",
+            "nm": "llvm-nm",
+            "objcopy": "llvm-objcopy",
+            "objdump": "llvm-objdump",
+            "ranlib": "llvm-ranlib",
+            "strip": "llvm-strip",
         })
 
-        # Add CMake utility tools
+        # Add CMake compiler and utility tools
         cmake_extra_variables = {
-            "CMAKE_OBJCOPY": "llvm-objcopy",
-            "CMAKE_SIZE_UTIL": "llvm-size",
-            "CMAKE_OBJDUMP": "llvm-objdump",
+            "CMAKE_C_COMPILER": "clang",
+            "CMAKE_CXX_COMPILER": "clang++",
+            "CMAKE_ASM_COMPILER": "clang",
+            "CMAKE_LINKER": "lld",
             "CMAKE_AR": "llvm-ar",
+            "CMAKE_NM": "llvm-nm",
+            "CMAKE_OBJCOPY": "llvm-objcopy",
+            "CMAKE_OBJDUMP": "llvm-objdump",
             "CMAKE_RANLIB": "llvm-ranlib",
-            "CMAKE_CXX_SCAN_FOR_MODULES": "ON",
+            "CMAKE_STRIP": "llvm-strip",
+            "CMAKE_SIZE_UTIL": "llvm-size",
+            "CMAKE_ADDR2LINE": "llvm-addr2line",
             "CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES": "1942b4fa-b2c5-4546-9385-83f254070067",
         }
 
@@ -480,18 +505,42 @@ class LLVMToolchainPackage(ConanFile):
             "tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
+        self.buildenv_info.define("CC", "clang")
+        self.buildenv_info.define("CXX", "clang++")
+        self.buildenv_info.define("AS", "clang")
+        self.buildenv_info.define("AR", "llvm-ar")
+        self.buildenv_info.define("LD", "lld")
+        self.buildenv_info.define("NM", "llvm-nm")
+        self.buildenv_info.define("OBJCOPY", "llvm-objcopy")
+        self.buildenv_info.define("OBJDUMP", "llvm-objdump")
+        self.buildenv_info.define("RANLIB", "llvm-ranlib")
+        self.buildenv_info.define("SIZE", "llvm-size")
+        self.buildenv_info.define("STRINGS", "llvm-strings")
+        self.buildenv_info.define("STRIP", "llvm-strip")
+        self.buildenv_info.define("ADDR2LINE", "llvm-addr2line")
+        self.buildenv_info.define("GDB", "lldb")
 
+        # Determine which OS we're targeting
+        target_os = None
+        target_arch = None
         if self.settings_target:
+            target_os = self.settings_target.get_safe('os')
+            target_arch = self.settings_target.get_safe('arch')
+        else:
+            # Native build - target is same as host
+            target_os = str(self.settings.os)
+            target_arch = str(self.settings.arch)
+
+        if target_os:
             self.add_common_flags()
-            if self.settings_target.get_safe('os') == 'Macos':
+            if target_os == 'Macos':
                 self.setup_mac_osx()
-            elif self.settings_target.get_safe('os') == 'Linux':
+            elif target_os == 'Linux':
                 self.setup_linux()
-            elif self.settings_target.get_safe('os') == 'Windows':
+            elif target_os == 'Windows':
                 self.setup_windows()
-            elif self.settings_target.get_safe('os') == 'baremetal':
-                ARCH = str(self.settings_target.get_safe('arch'))
-                if ARCH.startswith('cortex-m'):
+            elif target_os == 'baremetal':
+                if target_arch and target_arch.startswith('cortex-m'):
                     self.setup_arm_cortex_m()
 
     def package_id(self):
