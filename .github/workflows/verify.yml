@@ -83,7 +83,7 @@ jobs:
       # to your profile."
       - name: ⚙️ Build/Install ninja from scratch using LLVM for build platform
         run: >
-          conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }}
+          conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} --build=cmake --build=missing:cmake/*
 
       - name: 📦 Build C++ demo using  LLVM toolchain
         run: conan build demos/cpp -pr:a llvm-${{ inputs.version }} $HOST_PROFILE
