@@ -14,9 +14,16 @@ llvm-toolchain/20
 
 {% elif context == "build" %}
 
-include(default)
+[settings]
+os={{ detect_api.detect_os() }}
+arch={{ detect_api.detect_arch() }}
+build_type=Release
+compiler=clang
+compiler.cppstd=23
+compiler.libcxx=libc++
+compiler.version=20
 
 [tool_requires]
-!llvm-toolchain/*:llvm-toolchain/20,cmake/[>=3.28.0 <5.0.0]
+!llvm-toolchain/*: llvm-toolchain/20, cmake/[>=3.28.0 <5.0.0]
 
 {% endif %}
