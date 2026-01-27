@@ -20,7 +20,8 @@ architectures.
 ## 🧩 C++20 Modules Support
 
 This toolchain includes **full C++20 modules support** out of the box when using
-CMake and Ninja. The provided profiles include cmake and ninja as tool requirements.
+CMake and Ninja. The demo projects include cmake and ninja as tool requirements
+in their conanfiles.
 
 ### CMake Example
 
@@ -93,22 +94,14 @@ This provides profiles accessible via `-pr llvm-20`. These profiles only
 include compiler information. You'll need a "target" profile to actually build
 something.
 
-### Host Platform Profiles
+### Native Development
 
-For native development on your host platform:
+For native development on your host platform, the `llvm-20` profile automatically
+detects your OS and architecture:
 
 ```bash
-# x86_64 Linux
-conan build . -pr llvm-20 -pr linux_x86_64
-
-# ARM64 Linux
-conan build . -pr llvm-20 -pr linux_arm
-
-# ARM64 macOS
-conan build . -pr llvm-20 -pr macos_arm
-
-# x86_64 Windows
-conan build . -pr llvm-20 -pr windows_x86_64
+# Build for your current platform (auto-detected)
+conan build demos/cpp -pr:a llvm-20
 ```
 
 ### ARM Cortex-M Profiles
@@ -117,22 +110,30 @@ For embedded ARM Cortex-M development (cross-compilation):
 
 ```bash
 # Cortex-M4 with hardware floating point
-conan build . -pr llvm-20 -pr cortex-m4f
+conan build demos/cpp -pr:a llvm-20 -pr cortex-m4f
 
 # Cortex-M7 with double-precision FPU
-conan build . -pr llvm-20 -pr cortex-m7d
+conan build demos/cpp -pr:a llvm-20 -pr cortex-m7d
 
 # Cortex-M33 with hardware floating point
-conan build . -pr llvm-20 -pr cortex-m33f
+conan build demos/cpp -pr:a llvm-20 -pr cortex-m33f
 ```
 
 ## 🔗 Adding as a Dependency
 
 For this tool package to work correctly, the toolchain **MUST** be added as a
-dependency using `tool_requires` in at least one profile:
+dependency using `tool_requires` in at least one profile.
+
+The provided `llvm-20` profile uses Jinja2 templating to automatically detect
+your platform and configure both host and build contexts:
 
 ```jinja2
+{% if context == "host" %}
+
 [settings]
+os={{ detect_api.detect_os() }}
+arch={{ detect_api.detect_arch() }}
+build_type=Release
 compiler=clang
 compiler.cppstd=23
 compiler.libcxx=libc++
@@ -140,54 +141,30 @@ compiler.version=20
 
 [tool_requires]
 llvm-toolchain/20
-cmake/[>=3.28.0 <5.0.0]
-ninja/[^1.0.0]
 
-[conf]
-tools.cmake.cmaketoolchain:generator=Ninja
+{% elif context == "build" %}
+
+[settings]
+os={{ detect_api.detect_os() }}
+arch={{ detect_api.detect_arch() }}
+build_type=Release
+compiler=clang
+compiler.cppstd=23
+compiler.libcxx=libc++
+compiler.version=20
+
+[tool_requires]
+!llvm-toolchain/*: llvm-toolchain/20, cmake/[>=3.28.0 <5.0.0]
+
+{% endif %}
 ```
 
 By adding `llvm-toolchain/20` to your profile, every dependency will use
 this toolchain for compilation. The tool package should NOT be directly added
 to an application's `conanfile.py`.
 
-CMake and Ninja are recommended tool requirements for C++20 modules support and
-modern build features. You can customize or omit these in your own profiles if needed.
-
-Note that the profile above is missing the following settings:
-
-- `os`
-- `build_type`
-- `arch`
-
-### Host Platform Examples
-
-For a Release build on an M1 (ARM CPU) Mac:
-
-```plaintext
-[settings]
-arch=armv8
-build_type=Release
-os=Macos
-```
-
-For x86_64 Linux:
-
-```plaintext
-[settings]
-arch=x86_64
-build_type=Release
-os=Linux
-```
-
-For x86_64 Windows:
-
-```plaintext
-[settings]
-arch=x86_64
-build_type=Release
-os=Windows
-```
+The profile uses `detect_api` to automatically detect your OS and architecture,
+eliminating the need for separate platform-specific profiles.
 
 ### ARM Cortex-M Examples
 
@@ -232,11 +209,11 @@ the official releases based on your build and target settings, then stores it
 in your local Conan package cache:
 
 ```bash
-# For host platform development
-conan create . --version 20
+# For host platform development (native build)
+conan create all --version=20 --build-require --build=cmake --build=missing:cmake/* --build=make --build=missing:make/*
 
 # For ARM Cortex-M cross-compilation (downloads ARM Embedded variant)
-conan create . -pr:b default -pr:h cortex-m4f -pr:h llvm-20 --version 20 --build-require
+conan create all --version=20 --build-require --build=cmake --build=missing:cmake/* -pr:h llvm-20 -pr cortex-m4f --build=make --build=missing:make/*
 ```
 
 ## 🎛️ Options
@@ -501,15 +478,21 @@ Install the toolchain profiles and build the demo application:
 # Install toolchain profiles
 conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
-# Build the demo for host platform
-conan build demo -pr llvm-X -pr linux_x86_64 --build=missing
+# Build the demo for host platform (auto-detects OS and arch)
+conan build demos/cpp -pr:a llvm-X
 
 # Build the demo for ARM Cortex-M (cross-compilation)
-conan build demo -pr llvm-X -pr cortex-m4f --build=missing
+conan build demos/cpp -pr:a llvm-X -pr cortex-m4f
 ```
 
-> [!NOTE]
-> Replace `linux_x86_64` and `cortex-m4f` with your platform's profile.
+> [!IMPORTANT]
+> When cross-compiling, the target profile (e.g., `cortex-m4f`) must come
+> **after** the compiler profile (`llvm-X`). Conan processes profiles in order,
+> and later profiles override earlier ones. Placing the target profile last
+> ensures its settings (like `os=baremetal` and `arch=cortex-m4f`) take
+> precedence over the auto-detected host settings.
+>
+> Replace `cortex-m4f` with your target's profile for cross-compilation.
 > Available profiles are in the `conan/profiles/v1/` directory.
 
 #### 7. Submit a Pull Request
