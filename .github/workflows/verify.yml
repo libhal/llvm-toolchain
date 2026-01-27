@@ -84,7 +84,7 @@ jobs:
       - name: ⚙️ Build/Install ninja from scratch using LLVM for build platform
         if: ${{ runner.os != 'Windows' }}
         run: >
-          conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} -c tools.cmake.cmaketoolchain:extra_variables="{'CMAKE_MSVC_RUNTIME_LIBRARY': ''}"
+          conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }}
 
       - name: 📦 Build C++ demo using  LLVM toolchain
         run: conan build demos/cpp -pr:a llvm-${{ inputs.version }} $HOST_PROFILE

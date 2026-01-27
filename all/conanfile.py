@@ -458,8 +458,9 @@ class LLVMToolchainPackage(ConanFile):
         # unused.
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
-        # Ensure CMake knows this is a Windows build, not a freestanding/embedded
-        # build. Without this, CMake may add -nostartfiles -nostdlib flags.
+        # Ensure CMake knows this is a Windows build, not a freestanding/
+        # embedded build. Without this, CMake may add -nostartfiles -nostdlib
+        # flags.
         self.conf_info.define(
             "tools.cmake.cmaketoolchain:system_name", "Windows")
 

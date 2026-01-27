@@ -19,9 +19,8 @@ class BasicCppConan(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
         tc.generator = "Ninja"
-        if self.settings.os == "Windows":
-            tc.cache_variables["CMAKE_MSVC_RUNTIME_LIBRARY"] = ""
         tc.generate()
+
         deps = CMakeDeps(self)
         deps.generate()
 
