@@ -521,7 +521,7 @@ Once you've verified everything works:
 3. Include any platform-specific notes or limitations
 4. Note any version mismatches between upstream LLVM and ARM Embedded Toolchain
 
-### Testing Building tools for Platforms
+### Building Tools for the Build Platform
 
 The `llvm-toolchain` can not only be used to build applications for a target
 but also the build tools themselves. For example, if the prebuilt binary for
@@ -530,7 +530,7 @@ Ninja doesn't exist for your platform, your platform will need to build it.
 The command to build the Ninja:
 
 ```bash
-conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a conan/profiles/v1/llvm-20 -pr:a conan/profiles/v1/macos_arm
+conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a conan/profiles/v1/llvm-20 --build=cmake --build=missing:cmake/*
 ```
 
-Replace `conan/profiles/v1/macos_arm` with the correct OS and architecture.
+Replace `conan/profiles/v1/llvm-20` with the version you'd prefer.

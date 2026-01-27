@@ -534,17 +534,13 @@ class LLVMToolchainPackage(ConanFile):
         if target_os:
             self.add_common_flags()
             if target_os == 'Macos':
-                self.output.warning("Macos")
                 self.setup_mac_osx()
             elif target_os == 'Linux':
-                self.output.warning("Linux")
                 self.setup_linux()
             elif target_os == 'Windows':
-                self.output.warning("Windows")
                 self.setup_windows()
             elif target_os == 'baremetal':
                 if target_arch and target_arch.startswith('cortex-m'):
-                    self.output.warning("setup_arm_cortex_m")
                     self.setup_arm_cortex_m()
 
     def package_id(self):

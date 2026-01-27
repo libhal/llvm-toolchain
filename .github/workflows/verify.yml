@@ -71,11 +71,11 @@ jobs:
 
       - name: 📦 Create LLVM Toolchain Package (native build)
         if: ${{ inputs.host_profile == '' }}
-        run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=make --build=missing:make/* -c tools.build:skip_test=True
+        run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=make --build=missing:make/*
 
       - name: 📦 Create LLVM Toolchain Package (cross build)
         if: ${{ inputs.host_profile != '' }}
-        run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* -pr:h llvm-${{ inputs.version }} $HOST_PROFILE --build=make --build=missing:make/* -c tools.build:skip_test=True
+        run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* -pr:h llvm-${{ inputs.version }} $HOST_PROFILE --build=make --build=missing:make/*
 
       # Windows requires this setting which we do not specify. We get the
       # following conan error: "Visual Studio Runtime version (v140-v145) not
