@@ -61,6 +61,26 @@ All binaries are downloaded from official sources:
 - Upstream LLVM from [LLVM GitHub Releases](https://github.com/llvm/llvm-project/releases)
 - ARM Cortex-M targets from [ARM LLVM Embedded Toolchain](https://github.com/arm/arm-toolchain/releases)
 
+### LLVM 21
+
+| Platform | x86_64 | ARM64 |
+| -------- | ------ | ----- |
+| Linux    | ✅      | ✅     |
+| macOS    | ❌      | ✅     |
+| Windows  | ✅      | ✅     |
+
+> [!IMPORTANT]
+> This package uses version "21" to represent the most recent official releases
+> from both upstream LLVM and the ARM LLVM Embedded Toolchain. However, the
+> exact version numbers differ:
+>
+> - **Upstream LLVM**: Version 21.1.6 (for host platforms and non-Cortex-M targets)
+> - **ARM Embedded Toolchain**: Version 21.1.1 (for ARM Cortex-M baremetal targets)
+>
+> Both versions are the latest official releases available at the time of
+> packaging. The package automatically selects the appropriate variant based on
+> your target architecture.
+
 ### LLVM 20
 
 | Platform | x86_64 | ARM64 |

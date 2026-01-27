@@ -1,0 +1,117 @@
+#!/usr/bin/python
+#
+# Copyright 2024 - 2025 Khalil Estell and the libhal contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 🚀 Deploy 🐉 LLVM 21
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      upload:
+        type: boolean
+        default: true
+      version: # this isn't meant to be changed, its just a variable
+        type: string
+        default: 21
+
+jobs:
+  verify-linux-x86_64:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: ubuntu-24.04
+      demo_profile: linux_x86_64
+
+  verify-linux-arm:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: ubuntu-24.04-arm
+      demo_profile: linux_arm
+
+  verify-macos-15-arm:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: macos-15
+      demo_profile: macos_arm
+
+  verify-windows-x86_64:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: windows-latest
+      demo_profile: windows_x86_64
+
+  verify-windows-arm:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: windows-11-arm
+      demo_profile: windows_arm
+
+  verify-linux-x86_64-cortex-m0plus:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: ubuntu-24.04
+      demo_profile: cortex-m0plus
+
+  verify-linux-arm-cortex-m4:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: ubuntu-24.04-arm
+      demo_profile: cortex-m4
+
+  verify-macos-14-arm-cortex-m4f:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: macos-14
+      demo_profile: cortex-m4f
+
+  verify-macos-15-arm-cortex-m7d:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: macos-15
+      demo_profile: cortex-m7d
+
+  verify-windows-x86_64-cortex-m33f:
+    uses: ./.github/workflows/verify.yml
+    with:
+      version: ${{ inputs.VERSION }}
+      os: windows-latest
+      demo_profile: cortex-m33f
+
+  upload-package:
+    needs:
+      - verify-linux-x86_64
+      - verify-linux-arm
+      - verify-macos-15-arm
+      - verify-windows-x86_64
+      - verify-windows-arm
+      - verify-linux-x86_64-cortex-m0plus
+      - verify-linux-arm-cortex-m4
+      - verify-macos-14-arm-cortex-m4f
+      - verify-macos-15-arm-cortex-m7d
+      - verify-windows-x86_64-cortex-m33f
+    if: ${{ startsWith(github.ref, 'refs/tags/') && inputs.upload == true }}
+    uses: ./.github/workflows/upload.yml
+    secrets: inherit
+    with:
+      version: ${{ inputs.VERSION }}
