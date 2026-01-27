@@ -458,9 +458,7 @@ class LLVMToolchainPackage(ConanFile):
         # unused.
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
-        # Ensure CMake knows this is a Windows build, not a freestanding/
-        # embedded build. Without this, CMake may add -nostartfiles -nostdlib
-        # flags.
+        # Ensure CMake knows this is a Windows build
         self.conf_info.define(
             "tools.cmake.cmaketoolchain:system_name", "Windows")
 
@@ -468,7 +466,7 @@ class LLVMToolchainPackage(ConanFile):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
 
-        # Explicitly set system name for CMake
+        # Ensure CMake knows this is a Mac/Darwin build
         self.conf_info.define(
             "tools.cmake.cmaketoolchain:system_name", "Darwin")
 

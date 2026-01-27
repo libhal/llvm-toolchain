@@ -56,19 +56,19 @@ jobs:
   #     version: ${{ inputs.version }}
   #     os: macos-15
 
-  verify-windows-x86_64:
-    uses: ./.github/workflows/verify.yml
-    with:
-      display_name: Windows x86_64
-      version: ${{ inputs.version }}
-      os: windows-latest
-
-  # verify-windows-arm:
+  # verify-windows-x86_64:
   #   uses: ./.github/workflows/verify.yml
   #   with:
-  #     display_name: Windows ARM
+  #     display_name: Windows x86_64
   #     version: ${{ inputs.version }}
-  #     os: windows-11-arm
+  #     os: windows-latest
+
+  verify-windows-arm:
+    uses: ./.github/workflows/verify.yml
+    with:
+      display_name: Windows ARM
+      version: ${{ inputs.version }}
+      os: windows-11-arm
 
   # verify-linux-x86_64-cortex-m4f:
   #   uses: ./.github/workflows/verify.yml
@@ -110,13 +110,13 @@ jobs:
   #     os: macos-15-intel
   #     host_profile: cortex-m4f
 
-  # verify-windows-x86_64-cortex-m33f:
-  #   uses: ./.github/workflows/verify.yml
-  #   with:
-  #     display_name: Windows x86_64 → Cortex-M33F
-  #     version: ${{ inputs.version }}
-  #     os: windows-latest
-  #     host_profile: cortex-m33f
+  verify-windows-x86_64-cortex-m33f:
+    uses: ./.github/workflows/verify.yml
+    with:
+      display_name: Windows x86_64 → Cortex-M33F
+      version: ${{ inputs.version }}
+      os: windows-latest
+      host_profile: cortex-m33f
 
   upload-package:
     needs:
@@ -124,14 +124,14 @@ jobs:
       # - verify-linux-arm
       # - verify-macos-15-intel
       # - verify-macos-15-arm
-      - verify-windows-x86_64
-      # - verify-windows-arm
+      # - verify-windows-x86_64
+      - verify-windows-arm
       # - verify-linux-x86_64-cortex-m4f
       # - verify-linux-arm-cortex-m4
       # - verify-macos-14-arm-cortex-m4f
       # - verify-macos-15-arm-cortex-m4f
       # - verify-macos-15-intel-cortex-m4f
-      # - verify-windows-x86_64-cortex-m33f
+      - verify-windows-x86_64-cortex-m33f
     if: ${{ startsWith(github.ref, 'refs/tags/') && inputs.upload == true }}
     uses: ./.github/workflows/upload.yml
     secrets: inherit
