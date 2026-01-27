@@ -82,7 +82,6 @@ jobs:
       # defined. Please, add the compiler. runtime_version=[v140-v145] setting
       # to your profile."
       - name: ⚙️ Build/Install ninja from scratch using LLVM for build platform
-        if: ${{ runner.os != 'Windows' }}
         run: >
           conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }}
 

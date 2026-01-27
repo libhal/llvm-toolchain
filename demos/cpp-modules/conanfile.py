@@ -20,7 +20,6 @@ class CppModulesConan(ConanFile):
         tc = CMakeToolchain(self)
         tc.generator = "Ninja"
         tc.generate()
-
         deps = CMakeDeps(self)
         deps.generate()
 
