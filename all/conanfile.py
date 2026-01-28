@@ -428,10 +428,6 @@ class LLVMToolchainPackage(ConanFile):
     def setup_linux(self):
         self.cpp_info.libdirs = []
 
-        # Explicitly set system name for CMake
-        self.conf_info.define(
-            "tools.cmake.cmaketoolchain:system_name", "Linux")
-
         library_path = ""
         if self.settings.arch == "x86_64":
             library_path = self._lib_path / "x86_64-unknown-linux-gnu"
@@ -458,17 +454,9 @@ class LLVMToolchainPackage(ConanFile):
         # unused.
         self.conf_info.append("tools.gnu:disable_flags", 'libcxx')
 
-        # Ensure CMake knows this is a Windows build
-        self.conf_info.define(
-            "tools.cmake.cmaketoolchain:system_name", "Windows")
-
     def setup_mac_osx(self):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
-
-        # Ensure CMake knows this is a Mac/Darwin build
-        self.conf_info.define(
-            "tools.cmake.cmaketoolchain:system_name", "Darwin")
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {

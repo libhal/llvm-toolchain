@@ -73,14 +73,14 @@ jobs:
 
       - name: 📦 Create LLVM Toolchain Package (cross build)
         if: ${{ inputs.host_profile != '' }}
-        run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* -pr:h llvm-${{ inputs.version }} $HOST_PROFILE --build=make --build=missing:make/*
+        run: conan create all -pr:h llvm-${{ inputs.version }} ${{ inputs.host_profile }} --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=make --build=missing:make/*
 
       - name: ⚙️ Build/Install ninja from scratch using LLVM for build platform
         run: >
           conan install --tool-requires="ninja/1.13.2" --build="ninja/*" -pr:a llvm-${{ inputs.version }} --build=cmake --build=missing:cmake/*
 
       - name: 📦 Build C++ demo using  LLVM toolchain
-        run: conan build demos/cpp -pr:a llvm-${{ inputs.version }} $HOST_PROFILE
+        run: conan build demos/cpp -pr:a llvm-${{ inputs.version }} ${{ inputs.host_profile }}
 
       - name: 📦 Build C++ modules demo using LLVM toolchain
-        run: conan build demos/cpp-modules -pr:a llvm-${{ inputs.version }} $HOST_PROFILE
+        run: conan build demos/cpp-modules -pr:a llvm-${{ inputs.version }} ${{ inputs.host_profile }}
