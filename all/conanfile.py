@@ -40,6 +40,7 @@ class LLVMToolchainPackage(ConanFile):
         "data_sections": [True, False],
         "gc_sections": [True, False],
         "use_semihosting": [True, False],
+        "keep_lto_object": [True, False],
     }
 
     default_options = {
@@ -49,12 +50,14 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": True,
         "data_sections": True,
         "gc_sections": True,
-        "use_semihosting": True
+        "use_semihosting": True,
+        "keep_lto_object": True,
     }
 
     options_description = {
         "default_arch": "Automatically inject architecture-appropriate -target and -mcpu arguments into compilation flags.",
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
+        "keep_lto_object": "When LTO is enabled and targeting Macos, keep the merged LTO object file on disk next to the linked binary (instead of a temp file the linker deletes) so tools like dsymutil can extract debug info from the final binary.",
         "default_linker_script": "Automatically specify what the default linker script in order to allow projects without a linker script to link without error. If the user specifies their own linker script(s) via the -T argument, that default linker script will be ignored and the supplied linker script(s) will be used. Disabling this flag is not necessary when building applications with custom linker scripts. Only use this if you have multiple custom linker scripts and a default linker script you'd like to override against the supplied one from this toolchain library.",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
@@ -420,6 +423,23 @@ class LLVMToolchainPackage(ConanFile):
                 else:
                     pass
                     # LLVM will apply gc-sections automatically for Windows
+
+        if (self.options.lto and
+            self.options.keep_lto_object and
+            self.settings_target):
+            if self.settings_target.get_safe("os") == "Macos":
+                # Apple's ld64 (and lld's Mach-O driver, used here via
+                # -fuse-ld=lld) merges LTO input into a temp object file that
+                # gets deleted after linking, which breaks `dsymutil` on the
+                # final binary. Pointing -object_path_lto at a directory
+                # (instead of a fixed filename) makes the linker generate a
+                # unique name per link, so multiple executables built from
+                # the same build tree don't clobber each other's object.
+                # "." is used rather than an absolute path so this works
+                # under any build system (CMake, Meson, Autotools, ...):
+                # they all invoke the linker with cwd set to the build
+                # directory, which always exists.
+                exelinkflags.append("-Wl,-object_path_lto,./ ")
 
         self.conf_info.append("tools.build:cflags", c_flags)
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
