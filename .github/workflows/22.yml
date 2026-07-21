@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 🚀 Deploy 🐉 LLVM 20
+name: 🚀 Deploy 🐉 LLVM 22
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ on:
         default: true
       version: # this isn't meant to be changed, its just a variable
         type: string
-        default: 20
+        default: 22
 
 jobs:
   verify-linux-x86_64:
