@@ -93,14 +93,6 @@ jobs:
       os: macos-15
       host_profile: -pr cortex-m4f
 
-  verify-macos-15-intel-cortex-m4f:
-    uses: ./.github/workflows/verify.yml
-    with:
-      display_name: macOS 15 Intel → Cortex-M4F
-      version: ${{ inputs.version }}
-      os: macos-15-intel
-      host_profile: -pr cortex-m4f
-
   verify-windows-x86_64-cortex-m33f:
     uses: ./.github/workflows/verify.yml
     with:
