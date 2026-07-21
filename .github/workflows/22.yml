@@ -113,7 +113,6 @@ jobs:
     needs:
       - verify-linux-x86_64
       - verify-linux-arm
-      - verify-macos-15-intel
       - verify-macos-15-arm
       - verify-windows-x86_64
       - verify-windows-arm
@@ -121,7 +120,6 @@ jobs:
       - verify-linux-arm-cortex-m4
       - verify-macos-14-arm-cortex-m4f
       - verify-macos-15-arm-cortex-m4f
-      - verify-macos-15-intel-cortex-m4f
       - verify-windows-x86_64-cortex-m33f
     if: ${{ startsWith(github.ref, 'refs/tags/') && inputs.upload == true }}
     uses: ./.github/workflows/upload.yml
