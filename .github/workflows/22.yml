@@ -40,13 +40,6 @@ jobs:
       version: ${{ inputs.version }}
       os: ubuntu-24.04-arm
 
-  verify-macos-15-intel:
-    uses: ./.github/workflows/verify.yml
-    with:
-      display_name: macOS 15 Intel
-      version: ${{ inputs.version }}
-      os: macos-15-intel
-
   verify-macos-15-arm:
     uses: ./.github/workflows/verify.yml
     with:
