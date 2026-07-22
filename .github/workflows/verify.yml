@@ -48,6 +48,10 @@ jobs:
           submodules: true
           fetch-depth: 0
 
+      - name: 🍎 Update macOS (keeps Xcode Command Line Tools/SDK in sync with the OS)
+        if: ${{ contains(inputs.os, 'macos') }}
+        run: sudo softwareupdate --install --all --agree-to-license
+
       - name: 📥 Install CMake & Conan
         run: pipx install conan>=2.18.0
 

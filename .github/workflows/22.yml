@@ -54,13 +54,6 @@ jobs:
       version: ${{ inputs.version }}
       os: macos-26
 
-  verify-macos-27-arm:
-    uses: ./.github/workflows/verify.yml
-    with:
-      display_name: macOS 27 ARM
-      version: ${{ inputs.version }}
-      os: macos-27
-
   # verify-windows-x86_64:
   #   uses: ./.github/workflows/verify.yml
   #   with:
@@ -129,7 +122,6 @@ jobs:
       # - verify-linux-arm
       # - verify-macos-15-arm
       - verify-macos-26-arm
-      - verify-macos-27-arm
       # - verify-windows-x86_64
       # - verify-windows-arm
       # - verify-linux-x86_64-cortex-m4f
