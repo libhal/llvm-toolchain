@@ -396,12 +396,40 @@ class LLVMToolchainPackage(ConanFile):
     def _lib_path(self) -> Path:
         return Path(self.package_folder) / "lib"
 
+    # Known-broken (target_os, version) combinations for LTO. LTO on
+    # Apple's ld64/lld Mach-O linker combined with LLVM's libc++
+    # packaging has been a repeated source of link-time and runtime bugs
+    # (undefined std::__1::__hash_memory -- llvm/llvm-project#77653,
+    # #155531 -- and forcing this toolchain's own libc++.dylib to work
+    # around that breaks AddressSanitizer, since Apple's ASan runtime is
+    # hardcoded to the system libc++.dylib and ends up with two
+    # ABI-incompatible libc++ copies loaded in the same process). Add
+    # entries here as they're confirmed broken; anything not listed is
+    # assumed to support LTO.
+    _LTO_BROKEN = {
+        ("Macos", "22"): True,
+    }
+
+    def _lto_supported(self, target_os: str) -> bool:
+        return not self._LTO_BROKEN.get((target_os, str(self.version)), False)
+
     def add_common_flags(self):
         c_flags = []
         cxx_flags = []
         exelinkflags = ["-fuse-ld=lld "]
 
-        if self.options.lto:
+        target_os = (self.settings_target.get_safe("os")
+                     if self.settings_target else str(self.settings.os))
+        lto_enabled = self.options.lto and self._lto_supported(target_os)
+
+        if self.options.lto and not lto_enabled:
+            self.output.warning(
+                f"LTO was requested but is disabled for {target_os}/"
+                f"{self.version} due to known LTO bugs in this toolchain "
+                "version. See llvm/llvm-project#77653 and #155531."
+            )
+
+        if lto_enabled:
             c_flags.append("-flto ")
             cxx_flags.append("-flto ")
             exelinkflags.append("-flto ")
@@ -424,7 +452,7 @@ class LLVMToolchainPackage(ConanFile):
                     pass
                     # LLVM will apply gc-sections automatically for Windows
 
-        if (self.options.lto and
+        if (lto_enabled and
             self.options.keep_lto_object and
             self.settings_target):
             if self.settings_target.get_safe("os") == "Macos":
@@ -477,6 +505,39 @@ class LLVMToolchainPackage(ConanFile):
     def setup_mac_osx(self):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
+
+        # Clang's Darwin driver resolves libc++ *headers* relative to its
+        # own executable, but falls back to the sysroot's system
+        # libc++.1.dylib for *linking* instead of checking next to the
+        # compiler first. That mixes this toolchain's (newer) libc++
+        # headers with Apple's (older) system libc++.dylib, which can be
+        # missing symbols the headers expect (e.g.
+        # std::__1::__hash_memory), causing undefined symbol errors at
+        # link time -- with or without LTO. See llvm/llvm-project#77653
+        # and #155531.
+        #
+        # Rather than fight the dynamic linker over which libc++.dylib
+        # gets picked up (this toolchain's vs. the system's -- the
+        # earlier approach here, forcing our own via -L/-rpath, still
+        # collided with Apple's ASan runtime, which is hardcoded to the
+        # system libc++/libc++abi and can't be redirected), link the
+        # static archives directly. This guarantees the headers used at
+        # compile time and the implementation used at link time always
+        # match, with no runtime dylib resolution involved at all.
+        # -nostdlib++ stops the driver from also appending a dynamic
+        # `-lc++` alongside these. ASan is incompatible with this (it
+        # expects to interpose a dynamic libc++), so it's disabled for
+        # this toolchain on macOS at the build-system level instead (see
+        # libhal-cmake-util's LibhalTesting.cmake, LIBHAL_DISABLE_ASAN).
+        EXELINKFLAGS = [
+            "-nostdlib++ "
+            f"{self._lib_path / 'libc++.a'} "
+            f"{self._lib_path / 'libc++abi.a'} "
+            f"{self._lib_path / 'libunwind.a'} ",
+        ]
+
+        for flag in EXELINKFLAGS:
+            self.conf_info.append("tools.build:exelinkflags", flag)
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
