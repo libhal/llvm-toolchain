@@ -48,9 +48,16 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: 🍎 Update macOS (keeps Xcode Command Line Tools/SDK in sync with the OS)
+      - name: 🍎 Update Xcode Command Line Tools (keeps the SDK in sync with the OS)
         if: ${{ contains(inputs.os, 'macos') }}
-        run: sudo softwareupdate --install --all --agree-to-license
+        run: |
+          LABEL=$(softwareupdate --list 2>&1 | awk -F': ' '/Label:.*Command Line Tools/ {print $2}' | tail -1 | xargs)
+          if [ -n "$LABEL" ]; then
+            echo "Installing: $LABEL"
+            sudo softwareupdate --install "$LABEL" --agree-to-license
+          else
+            echo "Command Line Tools already up to date"
+          fi
 
       - name: 📥 Install CMake & Conan
         run: pipx install conan>=2.18.0
