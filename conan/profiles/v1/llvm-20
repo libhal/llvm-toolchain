@@ -24,6 +24,6 @@ compiler.libcxx=libc++
 compiler.version=20
 
 [tool_requires]
-!llvm-toolchain/*: llvm-toolchain/20, cmake/[>=3.28.0 <5.0.0]
+!llvm-toolchain/*: llvm-toolchain/20, cmake/[>=4.0.0 <5.0.0]
 
 {% endif %}
