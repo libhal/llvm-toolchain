@@ -238,7 +238,7 @@ class LLVMToolchainPackage(ConanFile):
         URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
         SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
-        if VARIANT == "arm-embedded" and self.version == 20:
+        if VARIANT == "arm-embedded" and self.version == "20":
             # Download & install the missing `clang-scan-deps` from  ARM
             # toolchain (ARM's LLVM fork) does not include the binary. These
             # binaries were taken from the upstream LLVM project and added to
@@ -247,6 +247,21 @@ class LLVMToolchainPackage(ConanFile):
         self._extract(URL, SHA256)
 
     def setup_arm_cortex_m(self):
+        # Prevent this package's lib/ directory (which holds the
+        # arm-embedded LLVM fork's own bundled libc++.dylib) from leaking
+        # into DYLD_LIBRARY_PATH/LD_LIBRARY_PATH for the build environment.
+        # Without this, host-context tools invoked in the same activated
+        # environment (e.g. ninja) can pick up this package's libc++
+        # instead of their own, causing symbol-mismatch crashes like
+        # "Symbol not found: __ZNSt12length_errorD1Ev". Mirrors the same
+        # clear already done in setup_mac_osx() and setup_linux() below -
+        # safe here too because this package is package_type="application"
+        # consumed via tool_requires, so cpp_info.libdirs isn't used for
+        # the actual cross-link step's -L flags (that comes from clang's
+        # own bundled resource-dir/sysroot), only for Conan's environment
+        # generation.
+        self.cpp_info.libdirs = []
+
         # Configure CMake for cross-compilation
         self.conf_info.define(
             "tools.cmake.cmaketoolchain:system_name", "Generic")
