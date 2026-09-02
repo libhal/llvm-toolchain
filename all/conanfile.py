@@ -238,7 +238,7 @@ class LLVMToolchainPackage(ConanFile):
         URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
         SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
-        if VARIANT == "arm-embedded" and self.version == 20:
+        if VARIANT == "arm-embedded" and self.version == "20":
             # Download & install the missing `clang-scan-deps` from  ARM
             # toolchain (ARM's LLVM fork) does not include the binary. These
             # binaries were taken from the upstream LLVM project and added to
