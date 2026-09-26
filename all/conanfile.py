@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
 import subprocess
 from pathlib import Path
 from conan import ConanFile
@@ -250,7 +251,7 @@ class LLVMToolchainPackage(ConanFile):
         URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
         SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
-        if VARIANT == "arm-embedded" and self.version == "20":
+        if VARIANT == "arm-embedded" and self.version in ("20", "21"):
             # Download & install the missing `clang-scan-deps` from  ARM
             # toolchain (ARM's LLVM fork) does not include the binary. These
             # binaries were taken from the upstream LLVM project and added to
@@ -504,6 +505,44 @@ class LLVMToolchainPackage(ConanFile):
     def setup_mac_osx(self):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
+
+        # Force linking against this package's own bundled libc++/libc++abi
+        # instead of the macOS SDK's system libc++.tbd, but ONLY for LLVM
+        # 21/22 on macOS 14/15 - the exact envelope where this is needed:
+        #
+        # Clang resolves `-lc++`/`-lc++abi` against `-isysroot <Xcode
+        # SDK>/usr/lib` by default on Darwin, which points at Apple's own
+        # libc++.dylib (a separately maintained fork that bundles
+        # libc++abi's symbols directly and lags behind upstream LLVM
+        # releases). LLVM 21/22's libc++ headers reference newer
+        # out-of-line runtime symbols (e.g. `std::__1::__hash_memory`)
+        # that the system dylib on macOS 14/15 doesn't export yet, causing
+        # "undefined symbol" link failures there. (Both `-lc++` and
+        # `-lc++abi` must be given explicitly once -L is overridden:
+        # unlike Apple's system libc++.dylib, upstream LLVM ships them as
+        # two separate dylibs, so relying on clang's automatic
+        # `-stdlib=libc++` linking alone is not enough and leaves
+        # exception typeinfo/vtable symbols missing.)
+        #
+        # macOS 26 is excluded because its own system libc++ is already new
+        # enough (no missing symbol there), and forcing the bundled
+        # libc++abi on macOS 26 instead surfaces a libc++abi TMO abort:
+        # "typed operator new being invoked before its static initializer
+        # in libcxx has been executed" - a separate, unresolved upstream
+        # issue specific to that combination. LLVM 20 is excluded because
+        # its headers don't reference the missing symbol, so the system
+        # libc++ already works fine for it as-is.
+        mac_major_version = int(platform.mac_ver()[0].split(".")[0])
+        if self.version in ("21", "22") and mac_major_version in (14, 15):
+            EXELINKFLAGS = [
+                f"-Wl,-rpath,{str(self._lib_path)} "
+                f"-L{str(self._lib_path)} ",
+                "-lc++ "
+                "-lc++abi "
+            ]
+
+            for flag in EXELINKFLAGS:
+                self.conf_info.append("tools.build:exelinkflags", flag)
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
