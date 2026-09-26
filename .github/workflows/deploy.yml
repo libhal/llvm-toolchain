@@ -1,4 +1,4 @@
-# Copyright 2024 - 2025 Khalil Estell and the libhal contributors
+# Copyright 2026 Khalil Estell and the libhal contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,11 @@ on:
 jobs:
   ci_20:
     uses: ./.github/workflows/20.yml
+    with:
+      upload: true
+    secrets: inherit
+  ci_22:
+    uses: ./.github/workflows/22.yml
     with:
       upload: true
     secrets: inherit

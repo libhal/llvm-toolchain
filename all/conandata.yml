@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2024 - 2025 Khalil Estell and the libhal contributors
+# Copyright 2026 Khalil Estell and the libhal contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,45 @@
 # limitations under the License.
 
 sources:
+  "22":
+    "upstream":
+      "Linux":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-Linux-X64.tar.xz"
+          sha256: "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-Linux-ARM64.tar.xz"
+          sha256: "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34"
+      "Macos":
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-macOS-ARM64.tar.xz"
+          sha256: "f260f4f7c0d430828a81ae8a3826a1d63fc0963ec2459489308cc23b1f7eab4f"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/clang+llvm-22.1.8-x86_64-pc-windows-msvc.tar.xz"
+          sha256: "d96c2cc1736f4eb7fa43cb9bbdf56d93551a9ae0a9aadb9c99c3c3b2b712a234"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/clang+llvm-22.1.8-aarch64-pc-windows-msvc.tar.xz"
+          sha256: "de718c58ebbc5f61d58c17b90457fcf42983bc2c4a4aba3e010d108713bfd7f1"
+    "arm-embedded": # ARM LLVM Embedded Toolchain - ONLY for ARM Cortex-M
+      "Linux":
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-22.1.0-ATfE/ATfE-22.1.0-Linux-x86_64.tar.xz"
+          sha256: "e2e9e637bba097ba6e4bae6982883fe705ffd7e8c3a7dc876964835ef1c7a724"
+        "armv8":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-22.1.0-ATfE/ATfE-22.1.0-Linux-AArch64.tar.xz"
+          sha256: "ca73e75963bb90c4bc66d67b1875a05e120a8a4febf3db0ad5f09330fbffda17"
+      "Macos": # x86_64 and armv8 are the same because the dmg its universal
+        "armv8":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-22.1.0-ATfE/ATfE-22.1.0-Darwin-universal.dmg"
+          sha256: "5995831648b31b7f5c9064a9de20e7fc629013dd1ffa242ba037c645c44e4de5"
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-22.1.0-ATfE/ATfE-22.1.0-Darwin-universal.dmg"
+          sha256: "5995831648b31b7f5c9064a9de20e7fc629013dd1ffa242ba037c645c44e4de5"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-22.1.0-ATfE/ATfE-22.1.0-Windows-x86_64.zip"
+          sha256: "9db55e43d5fdb1619692259897bf1e64f61da82a558827aae6928a2ccb39d348"
   "20":
     "upstream":
       "Linux":
