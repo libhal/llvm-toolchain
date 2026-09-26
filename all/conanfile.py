@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 import subprocess
 from pathlib import Path
 from conan import ConanFile
@@ -516,10 +515,19 @@ class LLVMToolchainPackage(ConanFile):
         # libc++abi on macOS 26 instead surfaces a libc++abi TMO abort:
         # "typed operator new being invoked before its static initializer
         # in libcxx has been executed" - a separate, unresolved upstream
-        # issue specific to that combination. LLVM 20/21 are excluded
-        # because their headers don't reference the missing symbol, so the
-        # system libc++ already works fine for them as-is.
-        mac_major_version = int(platform.mac_ver()[0].split(".")[0])
+        # issue specific to that combination. LLVM 20 is excluded because
+        # its headers don't reference the missing symbol, so the system
+        # libc++ already works fine for it as-is.
+        #
+        # The macOS version comes from `user.build:macos_version`, a conf
+        # set by the llvm-22 profile (via the `platform` module Conan
+        # itself injects into profile Jinja rendering), not from calling
+        # platform.mac_ver() directly here. This recipe runs in whatever
+        # process happens to be driving the build, which isn't reliably
+        # the actual target machine once cross-building is involved; the
+        # profile is where "what OS/version are we targeting" belongs.
+        mac_version = self.conf.get("user.build:macos_version", default="")
+        mac_major_version = int(mac_version.split(".")[0]) if mac_version else 0
         if self.version == "22" and mac_major_version in (14, 15):
             EXELINKFLAGS = [
                 f"-Wl,-rpath,{str(self._lib_path)} "
