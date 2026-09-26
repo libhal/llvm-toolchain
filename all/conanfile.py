@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2024 - 2025 Khalil Estell and the libhal contributors
+# Copyright 2026 Khalil Estell and the libhal contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ class LLVMToolchainPackage(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
     package_type = "application"
     build_policy = "missing"
+    upload_policy = "skip"
     short_paths = True
 
     options = {
@@ -39,6 +40,7 @@ class LLVMToolchainPackage(ConanFile):
         "data_sections": [True, False],
         "gc_sections": [True, False],
         "use_semihosting": [True, False],
+        "keep_lto_object": [True, False],
     }
 
     default_options = {
@@ -48,12 +50,14 @@ class LLVMToolchainPackage(ConanFile):
         "function_sections": True,
         "data_sections": True,
         "gc_sections": True,
-        "use_semihosting": True
+        "use_semihosting": True,
+        "keep_lto_object": True,
     }
 
     options_description = {
         "default_arch": "Automatically inject architecture-appropriate -target and -mcpu arguments into compilation flags.",
         "lto": "Enable LTO support in binaries and intermediate files (.o and .a files)",
+        "keep_lto_object": "When LTO is enabled and targeting Macos, keep the merged LTO object file on disk next to the linked binary (instead of a temp file the linker deletes) so tools like dsymutil can extract debug info from the final binary.",
         "default_linker_script": "Automatically specify what the default linker script in order to allow projects without a linker script to link without error. If the user specifies their own linker script(s) via the -T argument, that default linker script will be ignored and the supplied linker script(s) will be used. Disabling this flag is not necessary when building applications with custom linker scripts. Only use this if you have multiple custom linker scripts and a default linker script you'd like to override against the supplied one from this toolchain library.",
         "function_sections": "Enable -ffunction-sections which splits each function into their own subsection allowing link time garbage collection.",
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
@@ -125,13 +129,13 @@ class LLVMToolchainPackage(ConanFile):
         # This will set the settings_target which will download the appropriate
         # fork of LLVM for that architecture.
         if not self.settings_target:
-            self.output.info("Using upstream LLVM binary")
+            self.output.debug("Using upstream LLVM binary")
             return "upstream"
 
         TARGET_OS = self.settings_target.get_safe("os")
         TARGET_ARCH = self.settings_target.get_safe("arch")
 
-        self.output.info(
+        self.output.debug(
             f"host: os: '{TARGET_OS}', architecture: '{TARGET_ARCH}'")
 
         # ARM Cortex-M baremetal gets special ARM Embedded Toolchain
@@ -143,7 +147,7 @@ class LLVMToolchainPackage(ConanFile):
             "cortex-m35p", "cortex-m35pf",
             "cortex-m55", "cortex-m85",
         ]:
-            self.output.info("Using ARM Embedded LLVM fork")
+            self.output.debug("Using ARM Embedded LLVM fork")
             return "arm-embedded"
 
         # Everything else uses regular LLVM
@@ -152,7 +156,7 @@ class LLVMToolchainPackage(ConanFile):
         # - AVR (avr)
         # - Other ARM variants (cortex-a, etc.)
         # - Host builds
-        self.output.info("Using upstream LLVM binary")
+        self.output.debug("Using upstream LLVM binary")
         return "upstream"
 
     def _extract_macos_dmg(self, url: str, sha256: str):
@@ -246,15 +250,30 @@ class LLVMToolchainPackage(ConanFile):
         URL = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["url"]
         SHA256 = self.conan_data["sources"][self.version][VARIANT][BUILD_OS][BUILD_ARCH]["sha256"]
 
-        if VARIANT == "arm-embedded":
+        if VARIANT == "arm-embedded" and self.version == "20":
             # Download & install the missing `clang-scan-deps` from  ARM
             # toolchain (ARM's LLVM fork) does not include the binary. These
-            # binaries were taken from the upstream LLVM project and added to this
-            # directory.
+            # binaries were taken from the upstream LLVM project and added to
+            # this directory.
             self._download_and_install_clang_scan_deps(BUILD_OS, BUILD_ARCH)
         self._extract(URL, SHA256)
 
     def setup_arm_cortex_m(self):
+        # Prevent this package's lib/ directory (which holds the
+        # arm-embedded LLVM fork's own bundled libc++.dylib) from leaking
+        # into DYLD_LIBRARY_PATH/LD_LIBRARY_PATH for the build environment.
+        # Without this, host-context tools invoked in the same activated
+        # environment (e.g. ninja) can pick up this package's libc++
+        # instead of their own, causing symbol-mismatch crashes like
+        # "Symbol not found: __ZNSt12length_errorD1Ev". Mirrors the same
+        # clear already done in setup_mac_osx() and setup_linux() below -
+        # safe here too because this package is package_type="application"
+        # consumed via tool_requires, so cpp_info.libdirs isn't used for
+        # the actual cross-link step's -L flags (that comes from clang's
+        # own bundled resource-dir/sysroot), only for Conan's environment
+        # generation.
+        self.cpp_info.libdirs = []
+
         # Configure CMake for cross-compilation
         self.conf_info.define(
             "tools.cmake.cmaketoolchain:system_name", "Generic")
@@ -432,6 +451,23 @@ class LLVMToolchainPackage(ConanFile):
                     pass
                     # LLVM will apply gc-sections automatically for Windows
 
+        if (self.options.lto and
+            self.options.keep_lto_object and
+            self.settings_target):
+            if self.settings_target.get_safe("os") == "Macos":
+                # Apple's ld64 (and lld's Mach-O driver, used here via
+                # -fuse-ld=lld) merges LTO input into a temp object file that
+                # gets deleted after linking, which breaks `dsymutil` on the
+                # final binary. Pointing -object_path_lto at a directory
+                # (instead of a fixed filename) makes the linker generate a
+                # unique name per link, so multiple executables built from
+                # the same build tree don't clobber each other's object.
+                # "." is used rather than an absolute path so this works
+                # under any build system (CMake, Meson, Autotools, ...):
+                # they all invoke the linker with cwd set to the build
+                # directory, which always exists.
+                exelinkflags.append("-Wl,-object_path_lto,./ ")
+
         self.conf_info.append("tools.build:cflags", c_flags)
         self.conf_info.append("tools.build:cxxflags", cxx_flags)
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
@@ -474,16 +510,29 @@ class LLVMToolchainPackage(ConanFile):
             "c": "clang",
             "cpp": "clang++",
             "asm": "clang",
+            "ar": "llvm-ar",
+            "ld": "lld",
+            "nm": "llvm-nm",
+            "objcopy": "llvm-objcopy",
+            "objdump": "llvm-objdump",
+            "ranlib": "llvm-ranlib",
+            "strip": "llvm-strip",
         })
 
-        # Add CMake utility tools
+        # Add CMake compiler and utility tools
         cmake_extra_variables = {
-            "CMAKE_OBJCOPY": "llvm-objcopy",
-            "CMAKE_SIZE_UTIL": "llvm-size",
-            "CMAKE_OBJDUMP": "llvm-objdump",
+            "CMAKE_C_COMPILER": "clang",
+            "CMAKE_CXX_COMPILER": "clang++",
+            "CMAKE_ASM_COMPILER": "clang",
+            "CMAKE_LINKER": "lld",
             "CMAKE_AR": "llvm-ar",
+            "CMAKE_NM": "llvm-nm",
+            "CMAKE_OBJCOPY": "llvm-objcopy",
+            "CMAKE_OBJDUMP": "llvm-objdump",
             "CMAKE_RANLIB": "llvm-ranlib",
-            "CMAKE_CXX_SCAN_FOR_MODULES": "ON",
+            "CMAKE_STRIP": "llvm-strip",
+            "CMAKE_SIZE_UTIL": "llvm-size",
+            "CMAKE_ADDR2LINE": "llvm-addr2line",
             "CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES": "1942b4fa-b2c5-4546-9385-83f254070067",
         }
 
@@ -491,40 +540,53 @@ class LLVMToolchainPackage(ConanFile):
             "tools.cmake.cmaketoolchain:extra_variables", cmake_extra_variables)
 
         self.buildenv_info.define("LLVM_INSTALL_DIR", self.package_folder)
+        self.buildenv_info.define("CC", "clang")
+        self.buildenv_info.define("CXX", "clang++")
+        self.buildenv_info.define("AS", "clang")
+        self.buildenv_info.define("AR", "llvm-ar")
+        self.buildenv_info.define("LD", "lld")
+        self.buildenv_info.define("NM", "llvm-nm")
+        self.buildenv_info.define("OBJCOPY", "llvm-objcopy")
+        self.buildenv_info.define("OBJDUMP", "llvm-objdump")
+        self.buildenv_info.define("RANLIB", "llvm-ranlib")
+        self.buildenv_info.define("SIZE", "llvm-size")
+        self.buildenv_info.define("STRINGS", "llvm-strings")
+        self.buildenv_info.define("STRIP", "llvm-strip")
+        self.buildenv_info.define("ADDR2LINE", "llvm-addr2line")
+        self.buildenv_info.define("GDB", "lldb")
 
+        # Determine which OS we're targeting
+        target_os = None
+        target_arch = None
         if self.settings_target:
+            target_os = self.settings_target.get_safe('os')
+            target_arch = self.settings_target.get_safe('arch')
+        else:
+            # Native build - target is same as host
+            target_os = str(self.settings.os)
+            target_arch = str(self.settings.arch)
+
+        if target_os:
             self.add_common_flags()
-            if self.settings_target.get_safe('os') == 'Macos':
+            if target_os == 'Macos':
                 self.setup_mac_osx()
-            elif self.settings_target.get_safe('os') == 'Linux':
+            elif target_os == 'Linux':
                 self.setup_linux()
-            elif self.settings_target.get_safe('os') == 'Windows':
+            elif target_os == 'Windows':
                 self.setup_windows()
-            elif self.settings_target.get_safe('os') == 'baremetal':
-                ARCH = str(self.settings_target.get_safe('arch'))
-                if ARCH.startswith('cortex-m'):
+            elif target_os == 'baremetal':
+                if target_arch and target_arch.startswith('cortex-m'):
                     self.setup_arm_cortex_m()
 
     def package_id(self):
         # All options should be removed as none of them should impact the
         # package id hash. These options are only used for delivering command
         # line arguments via the package_info.
-        del self.info.options.default_arch
-        del self.info.options.lto
-        del self.info.options.function_sections
-        del self.info.options.data_sections
-        del self.info.options.gc_sections
-        del self.info.options.use_semihosting
-        # Remove any compiler or build_type settings from recipe hash
-        del self.info.settings.compiler
-        del self.info.settings.build_type
+        self.info.options.clear()
 
-        # Normalize Cortex-M variants to share the same package_id
-        if self.settings_target:
-            target_arch = str(self.settings_target.get_safe("arch") or "")
-            target_os = str(self.settings_target.get_safe("os") or "")
+        # Clear all settings - only the variant matters
+        self.info.settings.clear()
 
-            # All Cortex-M variants use the SAME binary - normalize them
-            if target_os == "baremetal" and target_arch.startswith("cortex-m"):
-                # Use conf system to modify the hash for the package ID
-                self.info.conf.define("user.llvm:target_family", "cortex-m")
+        # Only keep the variant in the package_id
+        variant = self._determine_llvm_variant()
+        self.info.conf.define("user.llvm:variant", variant)
