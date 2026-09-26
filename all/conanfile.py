@@ -517,6 +517,15 @@ class LLVMToolchainPackage(ConanFile):
         for flag in EXELINKFLAGS:
             self.conf_info.append("tools.build:exelinkflags", flag)
 
+        # Statically linking against this package's own libc++abi (rather
+        # than the system dylib) surfaces a libc++abi TMO abort on newer
+        # macOS/Clang combos: "typed operator new being invoked before its
+        # static initializer in libcxx has been executed". libc++abi's own
+        # error message names the fix - disable typed operator new/delete
+        # so no static initializer ordering is required.
+        cxx_flags = ["-fno-typed-cxx-new-delete "]
+        self.conf_info.append("tools.build:cxxflags", cxx_flags)
+
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
             "c": "clang",
