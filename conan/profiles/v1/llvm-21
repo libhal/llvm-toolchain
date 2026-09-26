@@ -12,9 +12,6 @@ compiler.version=21
 [tool_requires]
 llvm-toolchain/21
 
-[conf]
-user.build:macos_version={{ platform.mac_ver()[0] }}
-
 {% elif context == "build" %}
 
 [settings]
@@ -28,8 +25,5 @@ compiler.version=21
 
 [tool_requires]
 !llvm-toolchain/*: llvm-toolchain/21, cmake/[>=4.0.0 <5.0.0]
-
-[conf]
-user.build:macos_version={{ platform.mac_ver()[0] }}
 
 {% endif %}
