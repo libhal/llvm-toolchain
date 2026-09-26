@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
 import subprocess
 from pathlib import Path
 from conan import ConanFile
@@ -493,33 +494,42 @@ class LLVMToolchainPackage(ConanFile):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
 
-        # Point the linker at this package's own bundled libc++ instead of
-        # the macOS SDK's system libc++.tbd. Clang resolves `-lc++`
-        # against `-isysroot <Xcode SDK>/usr/lib` by default on Darwin,
-        # which points at Apple's own libc++.dylib - a separately
-        # maintained fork that lags behind upstream LLVM releases. Newer
-        # LLVM libc++ headers (e.g. LLVM 22) reference runtime symbols
-        # such as `std::__1::__hash_memory` that the system dylib on
-        # older macOS versions doesn't export yet, causing "undefined
-        # symbol" link failures that depend on which macOS version
-        # happens to run the build rather than on the code being
-        # compiled. Adding -L/-rpath (without also forcing explicit
-        # `-lc++`/`-lc++abi`) lets clang's own automatic `-stdlib=libc++`
-        # linking still resolve dynamically, just against this directory
-        # first - forcing `-lc++abi` explicitly here previously caused it
-        # to resolve to the static libc++abi.a next to the dylib, which
-        # breaks libc++abi's typed-new static-initializer ordering on
-        # newer macOS/Clang combos ("typed operator new being invoked
-        # before its static initializer in libcxx has been executed").
-        # Mirrors the same fix already applied for Linux in setup_linux()
-        # above, minus the explicit -l flags that caused that regression.
-        EXELINKFLAGS = [
-            f"-Wl,-rpath,{str(self._lib_path)} "
-            f"-L{str(self._lib_path)} ",
-        ]
+        # Force linking against this package's own bundled libc++/libc++abi
+        # instead of the macOS SDK's system libc++.tbd, but ONLY for LLVM 22
+        # on macOS 14/15 - the exact envelope where this is needed:
+        #
+        # Clang resolves `-lc++`/`-lc++abi` against `-isysroot <Xcode
+        # SDK>/usr/lib` by default on Darwin, which points at Apple's own
+        # libc++.dylib (a separately maintained fork that bundles
+        # libc++abi's symbols directly and lags behind upstream LLVM
+        # releases). LLVM 22's libc++ headers reference newer out-of-line
+        # runtime symbols (e.g. `std::__1::__hash_memory`) that the system
+        # dylib on macOS 14/15 doesn't export yet, causing "undefined
+        # symbol" link failures there. (Both `-lc++` and `-lc++abi` must be
+        # given explicitly once -L is overridden: unlike Apple's system
+        # libc++.dylib, upstream LLVM ships them as two separate dylibs, so
+        # relying on clang's automatic `-stdlib=libc++` linking alone is
+        # not enough and leaves exception typeinfo/vtable symbols missing.)
+        #
+        # macOS 26 is excluded because its own system libc++ is already new
+        # enough (no missing symbol there), and forcing the LLVM 22 bundled
+        # libc++abi on macOS 26 instead surfaces a libc++abi TMO abort:
+        # "typed operator new being invoked before its static initializer
+        # in libcxx has been executed" - a separate, unresolved upstream
+        # issue specific to that combination. LLVM 20/21 are excluded
+        # because their headers don't reference the missing symbol, so the
+        # system libc++ already works fine for them as-is.
+        mac_major_version = int(platform.mac_ver()[0].split(".")[0])
+        if self.version == "22" and mac_major_version in (14, 15):
+            EXELINKFLAGS = [
+                f"-Wl,-rpath,{str(self._lib_path)} "
+                f"-L{str(self._lib_path)} ",
+                "-lc++ "
+                "-lc++abi "
+            ]
 
-        for flag in EXELINKFLAGS:
-            self.conf_info.append("tools.build:exelinkflags", flag)
+            for flag in EXELINKFLAGS:
+                self.conf_info.append("tools.build:exelinkflags", flag)
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
