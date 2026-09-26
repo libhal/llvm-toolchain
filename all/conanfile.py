@@ -573,6 +573,19 @@ class LLVMToolchainPackage(ConanFile):
             "CMAKE_SIZE_UTIL": "llvm-size",
             "CMAKE_ADDR2LINE": "llvm-addr2line",
             "CMAKE_EXPERIMENTAL_EXPORT_PACKAGE_DEPENDENCIES": "1942b4fa-b2c5-4546-9385-83f254070067",
+            # Since CMake 3.28, the Ninja generator invokes clang-scan-deps
+            # to build a P1689 dependency graph for every C++ source file,
+            # not just ones using named modules - this project doesn't use
+            # C++20 modules, so disable it outright. This also sidesteps a
+            # real incompatibility on ARM's Embedded Toolchain (ATfE)
+            # variant: ATfE's clang-runtimes/multilib.yaml uses schema
+            # extensions (e.g. an `IncludeDirs` key and a `stdlibs` group)
+            # that the standalone clang-scan-deps polyfill binary (built
+            # from vanilla upstream LLVM, since ATfE doesn't ship its own)
+            # doesn't understand, making it abort with "unknown key" /
+            # "undefined group name" errors on every baremetal Cortex-M
+            # target before a single file compiles.
+            "CMAKE_CXX_SCAN_FOR_MODULES": "OFF",
         }
 
         self.conf_info.update(
