@@ -493,8 +493,8 @@ class LLVMToolchainPackage(ConanFile):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
 
-        # Force linking against this package's own bundled libc++ instead
-        # of the macOS SDK's system libc++.tbd. Clang resolves `-lc++`
+        # Point the linker at this package's own bundled libc++ instead of
+        # the macOS SDK's system libc++.tbd. Clang resolves `-lc++`
         # against `-isysroot <Xcode SDK>/usr/lib` by default on Darwin,
         # which points at Apple's own libc++.dylib - a separately
         # maintained fork that lags behind upstream LLVM releases. Newer
@@ -503,28 +503,23 @@ class LLVMToolchainPackage(ConanFile):
         # older macOS versions doesn't export yet, causing "undefined
         # symbol" link failures that depend on which macOS version
         # happens to run the build rather than on the code being
-        # compiled. Pointing -L/-rpath at this package's own lib/ keeps
-        # the headers and the linked runtime library from the same LLVM
-        # release, regardless of the host macOS/SDK version. Mirrors the
-        # same fix already applied for Linux in setup_linux() above.
+        # compiled. Adding -L/-rpath (without also forcing explicit
+        # `-lc++`/`-lc++abi`) lets clang's own automatic `-stdlib=libc++`
+        # linking still resolve dynamically, just against this directory
+        # first - forcing `-lc++abi` explicitly here previously caused it
+        # to resolve to the static libc++abi.a next to the dylib, which
+        # breaks libc++abi's typed-new static-initializer ordering on
+        # newer macOS/Clang combos ("typed operator new being invoked
+        # before its static initializer in libcxx has been executed").
+        # Mirrors the same fix already applied for Linux in setup_linux()
+        # above, minus the explicit -l flags that caused that regression.
         EXELINKFLAGS = [
             f"-Wl,-rpath,{str(self._lib_path)} "
             f"-L{str(self._lib_path)} ",
-            "-lc++ "
-            "-lc++abi "
         ]
 
         for flag in EXELINKFLAGS:
             self.conf_info.append("tools.build:exelinkflags", flag)
-
-        # Statically linking against this package's own libc++abi (rather
-        # than the system dylib) surfaces a libc++abi TMO abort on newer
-        # macOS/Clang combos: "typed operator new being invoked before its
-        # static initializer in libcxx has been executed". libc++abi's own
-        # error message names the fix - disable typed operator new/delete
-        # so no static initializer ordering is required.
-        cxx_flags = ["-fno-typed-cxx-new-delete "]
-        self.conf_info.append("tools.build:cxxflags", cxx_flags)
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
