@@ -493,6 +493,30 @@ class LLVMToolchainPackage(ConanFile):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
 
+        # Force linking against this package's own bundled libc++ instead
+        # of the macOS SDK's system libc++.tbd. Clang resolves `-lc++`
+        # against `-isysroot <Xcode SDK>/usr/lib` by default on Darwin,
+        # which points at Apple's own libc++.dylib - a separately
+        # maintained fork that lags behind upstream LLVM releases. Newer
+        # LLVM libc++ headers (e.g. LLVM 22) reference runtime symbols
+        # such as `std::__1::__hash_memory` that the system dylib on
+        # older macOS versions doesn't export yet, causing "undefined
+        # symbol" link failures that depend on which macOS version
+        # happens to run the build rather than on the code being
+        # compiled. Pointing -L/-rpath at this package's own lib/ keeps
+        # the headers and the linked runtime library from the same LLVM
+        # release, regardless of the host macOS/SDK version. Mirrors the
+        # same fix already applied for Linux in setup_linux() above.
+        EXELINKFLAGS = [
+            f"-Wl,-rpath,{str(self._lib_path)} "
+            f"-L{str(self._lib_path)} ",
+            "-lc++ "
+            "-lc++abi "
+        ]
+
+        for flag in EXELINKFLAGS:
+            self.conf_info.append("tools.build:exelinkflags", flag)
+
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
             "c": "clang",
