@@ -34,3 +34,8 @@ jobs:
     uses: ./.github/workflows/22.yml
     with:
       upload: false
+
+  ci_23:
+    uses: ./.github/workflows/23.yml
+    with:
+      upload: false

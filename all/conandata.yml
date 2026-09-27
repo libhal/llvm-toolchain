@@ -15,6 +15,45 @@
 # limitations under the License.
 
 sources:
+  "23":
+    "upstream":
+      "Linux":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/LLVM-23.1.2-Linux-X64.tar.xz"
+          sha256: "b5ed9675149cc837c282e9b6962c276c9fa62863d5b2f91537b60848552995b7"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/LLVM-23.1.2-Linux-ARM64.tar.xz"
+          sha256: "075da47cb832273717d4c7bad4b6b4848d7c154262e9ba0dcc0025426d4073f0"
+      "Macos":
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/LLVM-23.1.2-macOS-ARM64.tar.xz"
+          sha256: "d7c26fc6177e42842e2d1ffaad31aec057c56a924392b1a23d830abe2c5d53b1"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/clang+llvm-23.1.2-x86_64-pc-windows-msvc.tar.xz"
+          sha256: "8fb91cdc44fcbbdcf6b3ffd0a1f9859abd14a3c3aae4423c2b6d4a4f90bf0095"
+        "armv8":
+          url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.2/clang+llvm-23.1.2-aarch64-pc-windows-msvc.tar.xz"
+          sha256: "9703cceafb5a0efd6c8720c9b6d35a0d0858079cd2175229e7fa4b922f3d8822"
+    "arm-embedded": # ARM LLVM Embedded Toolchain - ONLY for ARM Cortex-M
+      "Linux":
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-23.1.0-ATfE/ATfE-23.1.0-Linux-x86_64.tar.xz"
+          sha256: "a7be511613af15151c93961ad39c8cf9ae6889a453c8b547f42f4051a416dc8e"
+        "armv8":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-23.1.0-ATfE/ATfE-23.1.0-Linux-AArch64.tar.xz"
+          sha256: "df3b055d05659d8fda710d820e6c1ceff7bca3234c5067abe82a16e781d8de99"
+      "Macos": # x86_64 and armv8 are the same because the dmg its universal
+        "armv8":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-23.1.0-ATfE/ATfE-23.1.0-Darwin-universal.dmg"
+          sha256: "6b7ec8861cd7afdd0f872eed661cf87a6ffd289289de314df53b9a43b0547e00"
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-23.1.0-ATfE/ATfE-23.1.0-Darwin-universal.dmg"
+          sha256: "6b7ec8861cd7afdd0f872eed661cf87a6ffd289289de314df53b9a43b0547e00"
+      "Windows":
+        "x86_64":
+          url: "https://github.com/arm/arm-toolchain/releases/download/release-23.1.0-ATfE/ATfE-23.1.0-Windows-x86_64.zip"
+          sha256: "f1aec4fd8ae5c74186c00f620a8c1eea9d03d4d51db2eba5bcd4e707b4c19fe7"
   "22":
     "upstream":
       "Linux":
