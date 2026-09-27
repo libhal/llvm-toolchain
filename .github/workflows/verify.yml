@@ -78,6 +78,37 @@ jobs:
       - name: 📡 Install local toolchain profiles
         run: conan config install -tf profiles/ -sf conan/profiles/v1/ .
 
+      - name: 🔧 Register newer clang versions with Conan
+        # Conan's own bundled settings.yml enumerates valid
+        # settings.compiler.version values for clang and lags behind new
+        # LLVM releases (as of Conan 2.27.0 it only goes up to "22"). Until
+        # Conan ships a release that recognizes newer clang versions,
+        # extend settings_user.yml ourselves so `compiler.version=23` (etc.)
+        # in our profiles doesn't get rejected as an "Invalid setting".
+        # Uses `shell: python` for cross-platform (Linux/macOS/Windows)
+        # portability without shell-quoting headaches.
+        shell: python
+        run: |
+          import subprocess
+          import pathlib
+
+          home = subprocess.run(
+              ["conan", "config", "home"],
+              capture_output=True, text=True, check=True
+          ).stdout.strip()
+          path = pathlib.Path(home) / "settings_user.yml"
+          text = path.read_text() if path.exists() else ""
+
+          NEW_CLANG_VERSIONS = ["23"]
+          missing = [v for v in NEW_CLANG_VERSIONS if f'"{v}"' not in text]
+          if missing:
+              versions = ", ".join(f'"{v}"' for v in missing)
+              text += f'\ncompiler:\n  clang:\n    version: [{versions}]\n'
+              path.write_text(text)
+
+          print(f"--- {path} ---")
+          print(path.read_text())
+
       - name: 📦 Create LLVM Toolchain Package (native build)
         if: ${{ inputs.host_profile == '' }}
         run: conan create all --version=${{ inputs.version }} --build-require --build=cmake --build=missing:cmake/* --build=make --build=missing:make/*
