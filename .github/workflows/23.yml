@@ -38,7 +38,12 @@ jobs:
     with:
       display_name: Linux ARM
       version: ${{ inputs.version }}
-      os: ubuntu-24.04-arm
+      # LLVM 23.1.2's official Linux ARM64 release binary (unlike 22.1.8's)
+      # dynamically links lld/ld.lld against ICU 70 (libicui18n.so.70 etc,
+      # confirmed via `readelf -d`), which ubuntu-24.04-arm's newer ICU 74
+      # doesn't satisfy ("cannot open shared object file"). ubuntu-22.04-arm
+      # ships ICU 70 natively.
+      os: ubuntu-22.04-arm
 
   verify-macos-15-arm:
     uses: ./.github/workflows/verify.yml
@@ -81,7 +86,10 @@ jobs:
     with:
       display_name: Linux ARM → Cortex-M4
       version: ${{ inputs.version }}
-      os: ubuntu-24.04-arm
+      # See the verify-linux-arm job above: the build-platform ninja build
+      # (which always uses the native LLVM 23 toolchain regardless of the
+      # cross-compilation target) needs ubuntu-22.04-arm's ICU 70 too.
+      os: ubuntu-22.04-arm
       host_profile: -pr cortex-m4
 
   verify-macos-14-arm-cortex-m4f:
