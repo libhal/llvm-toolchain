@@ -32,6 +32,14 @@ class LLVMToolchainPackage(ConanFile):
     build_policy = "missing"
     upload_policy = "skip"
     short_paths = True
+    # Never fall back to a "compatible" binary. The compatibility plugin
+    # re-runs package_id() for alternate cppstd values without
+    # settings_target, which always yields the "upstream" variant. A cached
+    # host toolchain would then be reused for a Cortex-M target.
+    extension_properties = {
+        "compatibility_cppstd": False,
+        "compatibility_cstd": False,
+    }
 
     options = {
         "default_arch": [True, False],
