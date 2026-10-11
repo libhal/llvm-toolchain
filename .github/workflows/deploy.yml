@@ -21,12 +21,16 @@ on:
 
 jobs:
   ci_20:
+    # Polyfill releases only host extra binaries; don't deploy for them.
+    if: ${{ !endsWith(github.ref_name, '-polyfill') }}
     uses: ./.github/workflows/20.yml
     with:
       upload: true
     secrets: inherit
 
   ci_23:
+    # Polyfill releases only host extra binaries; don't deploy for them.
+    if: ${{ !endsWith(github.ref_name, '-polyfill') }}
     uses: ./.github/workflows/23.yml
     with:
       upload: true

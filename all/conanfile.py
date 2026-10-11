@@ -236,6 +236,17 @@ class LLVMToolchainPackage(ConanFile):
                  filename=SCAN_DEPS_FILE_DESTINATION)
         chmod(self, SCAN_DEPS_FILE_DESTINATION, execute=True)
 
+    def _download_and_install_icu70(self):
+        # LLVM 23's official Linux ARM64 release links lld against ICU 70,
+        # which only Ubuntu 22.04 ships. lld's RUNPATH includes
+        # $ORIGIN/../lib, so placing the libraries in lib/ is enough. See
+        # scripts/package_icu70_polyfill.sh for how the archive is built.
+        URL = ("https://github.com/libhal/llvm-toolchain/releases/download/"
+               f"llvm-{self.version}-polyfill/Linux_armv8-icu70.tar.gz")
+        get(self, URL,
+            sha256="ace78ad9364d69b7db57839dabb50031a5ceee20b08f8e7af5fd0e2b75cd510c",
+            destination=self.package_folder)
+
     def package(self):
         VARIANT = self._determine_llvm_variant()
         BUILD_OS = str(self.settings_build.os)
@@ -254,6 +265,10 @@ class LLVMToolchainPackage(ConanFile):
             # this directory.
             self._download_and_install_clang_scan_deps(BUILD_OS, BUILD_ARCH)
         self._extract(URL, SHA256)
+
+        if (VARIANT == "upstream" and self.version == "23" and
+                BUILD_OS == "Linux" and BUILD_ARCH == "armv8"):
+            self._download_and_install_icu70()
 
     def setup_arm_cortex_m(self):
         # Prevent this package's lib/ directory (which holds the
