@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🍎 Update Xcode Command Line Tools (keeps the SDK in sync with the OS)
-        if: ${{ contains(inputs.os, 'macos') }}
+        if: ${{ runner.os == 'macOS' }}
         run: |
           LABEL=$(softwareupdate --list 2>&1 | awk -F': ' '/Label:.*Command Line Tools/ {print $2}' | tail -1 | xargs)
           if [ -n "$LABEL" ]; then

@@ -412,10 +412,24 @@ class LLVMToolchainPackage(ConanFile):
     def _lib_path(self) -> Path:
         return Path(self.package_folder) / "lib"
 
+    @property
+    def _linker(self) -> str:
+        # Use Apple's ld when targeting macOS instead of ld64.lld. The macOS
+        # SDK's .tbd stubs are versioned alongside Apple's ld, and lld lags
+        # behind them: e.g. the macOS 27 SDK lists an `arm64e.x1`
+        # architecture that ld64.lld from LLVM 20 and 22 rejects as "unknown
+        # architecture", so nothing links. Apple's ld always understands the
+        # SDK it ships with, and clang's Darwin driver hands it this
+        # package's libLTO.dylib via -lto_library, so LTO still works.
+        if (self.settings_target and
+                self.settings_target.get_safe("os") == "Macos"):
+            return "ld"
+        return "lld"
+
     def add_common_flags(self):
         c_flags = []
         cxx_flags = []
-        exelinkflags = ["-fuse-ld=lld "]
+        exelinkflags = [f"-fuse-ld={self._linker} "]
 
         if self.options.lto:
             c_flags.append("-flto ")
@@ -444,9 +458,9 @@ class LLVMToolchainPackage(ConanFile):
             self.options.keep_lto_object and
             self.settings_target):
             if self.settings_target.get_safe("os") == "Macos":
-                # Apple's ld64 (and lld's Mach-O driver, used here via
-                # -fuse-ld=lld) merges LTO input into a temp object file that
-                # gets deleted after linking, which breaks `dsymutil` on the
+                # Apple's ld64 (and lld's Mach-O driver) merges LTO input
+                # into a temp object file that gets deleted after linking,
+                # which breaks `dsymutil` on the
                 # final binary. Pointing -object_path_lto at a directory
                 # (instead of a fixed filename) makes the linker generate a
                 # unique name per link, so multiple executables built from
@@ -538,7 +552,7 @@ class LLVMToolchainPackage(ConanFile):
             "cpp": "clang++",
             "asm": "clang",
             "ar": "llvm-ar",
-            "ld": "lld",
+            "ld": self._linker,
             "nm": "llvm-nm",
             "objcopy": "llvm-objcopy",
             "objdump": "llvm-objdump",
@@ -551,7 +565,7 @@ class LLVMToolchainPackage(ConanFile):
             "CMAKE_C_COMPILER": "clang",
             "CMAKE_CXX_COMPILER": "clang++",
             "CMAKE_ASM_COMPILER": "clang",
-            "CMAKE_LINKER": "lld",
+            "CMAKE_LINKER": self._linker,
             "CMAKE_AR": "llvm-ar",
             "CMAKE_NM": "llvm-nm",
             "CMAKE_OBJCOPY": "llvm-objcopy",
@@ -571,7 +585,7 @@ class LLVMToolchainPackage(ConanFile):
         self.buildenv_info.define("CXX", "clang++")
         self.buildenv_info.define("AS", "clang")
         self.buildenv_info.define("AR", "llvm-ar")
-        self.buildenv_info.define("LD", "lld")
+        self.buildenv_info.define("LD", self._linker)
         self.buildenv_info.define("NM", "llvm-nm")
         self.buildenv_info.define("OBJCOPY", "llvm-objcopy")
         self.buildenv_info.define("OBJDUMP", "llvm-objdump")
