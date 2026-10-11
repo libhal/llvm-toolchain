@@ -25,11 +25,7 @@ jobs:
     with:
       upload: true
     secrets: inherit
-  ci_22:
-    uses: ./.github/workflows/22.yml
-    with:
-      upload: true
-    secrets: inherit
+
   ci_23:
     uses: ./.github/workflows/23.yml
     with:
