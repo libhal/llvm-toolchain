@@ -126,3 +126,9 @@ jobs:
 
       - name: 📦 Build C++ modules demo using LLVM toolchain
         run: conan build demos/cpp-modules -pr:a llvm-${{ inputs.version }} ${{ inputs.host_profile }}
+
+      # Runs a program under ASan that needs a libc++ matching the headers.
+      # Native builds only; LLVM 20 uses the system libc++ instead.
+      - name: 🧪 Build & run libc++ runtime check
+        if: ${{ inputs.host_profile == '' && inputs.version != '20' }}
+        run: conan build demos/libcxx-runtime -pr:a llvm-${{ inputs.version }}

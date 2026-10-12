@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 import subprocess
 from pathlib import Path
 from conan import ConanFile
@@ -531,43 +530,36 @@ class LLVMToolchainPackage(ConanFile):
         # Disable Conan's automatic library directories
         self.cpp_info.libdirs = []
 
-        # Force linking against this package's own bundled libc++/libc++abi
-        # instead of the macOS SDK's system libc++.tbd, but ONLY for LLVM
-        # 22/23 on macOS 14/15 - the exact envelope where this is needed:
+        # Statically link this package's own libc++/libc++abi for LLVM 22+.
         #
-        # Clang resolves `-lc++`/`-lc++abi` against `-isysroot <Xcode
-        # SDK>/usr/lib` by default on Darwin, which points at Apple's own
-        # libc++.dylib (a separately maintained fork that bundles
-        # libc++abi's symbols directly and lags behind upstream LLVM
-        # releases). LLVM 22/23's libc++ headers reference newer out-of-line
-        # runtime symbols (e.g. `std::__1::__hash_memory`) that the system
-        # dylib on macOS 14/15 doesn't export yet, causing "undefined
-        # symbol" link failures there (confirmed for 23 via the same
-        # ld64.lld error CI hit for 22). (Both `-lc++` and `-lc++abi` must
-        # be given explicitly once -L is overridden: unlike Apple's system
-        # libc++.dylib, upstream LLVM ships them as two separate dylibs, so
-        # relying on clang's automatic `-stdlib=libc++` linking alone is
-        # not enough and leaves exception typeinfo/vtable symbols missing.)
+        # Upstream libc++ headers assume the libc++ library they run against
+        # is the same version. Apple's system libc++ lags behind upstream
+        # releases, and upstream headers lack Apple's availability markup, so
+        # LLVM 22/23 programs reference symbols the system dylib may not have
+        # (e.g. std::__hash_memory on macOS 14/15, the vtable for
+        # std::__bad_variant_access_with_msg on macOS 26).
         #
-        # macOS 26 is excluded because its own system libc++ is already new
-        # enough (no missing symbol there), and forcing the bundled
-        # libc++abi on macOS 26 instead surfaces a libc++abi TMO abort:
-        # "typed operator new being invoked before its static initializer
-        # in libcxx has been executed" - a separate, unresolved upstream
-        # issue specific to that combination. LLVM 20/21 are excluded
-        # because their headers don't reference the missing symbol, so the
-        # system libc++ already works fine for them as-is.
-        mac_major_version = int(platform.mac_ver()[0].split(".")[0])
-        if self.version in ("22", "23") and mac_major_version in (14, 15):
-            EXELINKFLAGS = [
-                f"-Wl,-rpath,{str(self._lib_path)} "
-                f"-L{str(self._lib_path)} ",
-                "-lc++ "
-                "-lc++abi "
-            ]
-
-            for flag in EXELINKFLAGS:
-                self.conf_info.append("tools.build:exelinkflags", flag)
+        # Linking the bundled libc++ dynamically instead caused two copies of
+        # libc++ in one process whenever ASan is used (its runtime links the
+        # system libc++), and a libc++abi abort on macOS 26. Static linking
+        # gives every program the libc++ that matches its headers, with no
+        # dependency on the system libc++ version. It also exposes libc++ to
+        # link-time analysis. LLVM 20/21 headers work with the system libc++,
+        # so they keep using it.
+        #
+        # -no_exported_symbols keeps the executable's libc++ private. Without
+        # it, dyld coalesces the executable's weak libc++ symbols with those
+        # of any system libc++ loaded into the process (the ASan runtime
+        # loads one), which mixes the two copies again (bad-free in
+        # std::locale::~locale at exit).
+        if int(str(self.version).split(".")[0]) >= 22:
+            self.conf_info.append("tools.build:exelinkflags", "-nostdlib++ ")
+            self.conf_info.append("tools.build:exelinkflags",
+                                  "-Wl,-no_exported_symbols ")
+            self.conf_info.append("tools.build:exelinkflags",
+                                  f"{self._lib_path / 'libc++.a'} ")
+            self.conf_info.append("tools.build:exelinkflags",
+                                  f"{self._lib_path / 'libc++abi.a'} ")
 
     def package_info(self):
         self.conf_info.define("tools.build:compiler_executables", {
