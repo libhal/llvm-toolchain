@@ -49,6 +49,7 @@ class LLVMToolchainPackage(ConanFile):
         "gc_sections": [True, False],
         "use_semihosting": [True, False],
         "keep_lto_object": [True, False],
+        "skip_static_destructors": [True, False],
     }
 
     default_options = {
@@ -60,6 +61,7 @@ class LLVMToolchainPackage(ConanFile):
         "gc_sections": True,
         "use_semihosting": True,
         "keep_lto_object": True,
+        "skip_static_destructors": True,
     }
 
     options_description = {
@@ -71,6 +73,7 @@ class LLVMToolchainPackage(ConanFile):
         "data_sections": "Enable -fdata-sections which splits each statically defined block memory into their own subsection allowing link time garbage collection.",
         "gc_sections": "Enable garbage collection at link stage. Only useful if at least function_sections and data_sections is enabled.",
         "use_semihosting": "Inject command line flags to enable semihosting for your architecture. This is only used when the os=baremetal.",
+        "skip_static_destructors": "Add -fno-c++-static-destructors so objects with static storage don't register their destructors to run at exit. Bare-metal programs never exit, and the registration links in __cxa_atexit and its table. This is only used when the os=baremetal.",
     }
 
     def validate(self):
@@ -420,6 +423,9 @@ class LLVMToolchainPackage(ConanFile):
         if self.options.use_semihosting:
             SEMIHOST = ["-nostartfiles", "-lcrt0-semihost", "-lsemihost"]
             exelinkflags.extend(SEMIHOST)
+
+        if self.options.skip_static_destructors:
+            cxx_flags.append("-fno-c++-static-destructors")
 
         self.output.info(f'c_flags: {c_flags}')
         self.output.info(f'cxx_flags: {cxx_flags}')
