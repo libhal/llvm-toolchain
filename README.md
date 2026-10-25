@@ -229,6 +229,7 @@ llvm-toolchain/*:data_sections=True
 llvm-toolchain/*:function_sections=True
 llvm-toolchain/*:gc_sections=True
 llvm-toolchain/*:use_semihosting=True
+llvm-toolchain/*:skip_static_destructors=True
 ```
 
 ### `default_arch` (Default: `True`)
@@ -296,6 +297,23 @@ This option adds the following linker flags:
 
 Users may disable this option if they're implementing their own I/O system or
 don't need semihosting functionality.
+
+### `skip_static_destructors` (Default: `True`)
+
+Add `-fno-c++-static-destructors` to C++ compilation for baremetal targets
+(ARM Cortex-M). Objects with static storage, such as drivers declared
+`static`, then don't register their destructors to run at program exit.
+
+A baremetal program never exits, so those destructors never run. Registering
+them still costs space: it links in `__cxa_atexit` and the table it fills,
+about 220 bytes of flash and 384 bytes of RAM with picolibc, plus each
+registered destructor's code.
+
+> [!NOTE]
+> This option only applies when `os=baremetal`.
+
+Disable it if your program does exit and relies on static destructors
+running.
 
 ## 🎯 Supported ARM Cortex-M Targets
 
