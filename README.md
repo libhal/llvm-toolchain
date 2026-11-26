@@ -67,7 +67,13 @@ All binaries are downloaded from official sources:
 | -------- | ------ | ----- |
 | Linux    | ✅      | ✅     |
 | macOS    | ✅      | ✅     |
-| Windows  | ✅      | ✅     |
+| Windows  | ⚠️      | ⚠️     |
+
+> [!WARNING]
+> On Windows, LLVM 20 only works with the MSVC standard library from Visual
+> Studio 17 or older. MSVC 14.52 (Visual Studio 18) and newer reject Clang
+> older than 22 with "error STL1000: Unexpected compiler version, expected
+> Clang 22 or newer.", so CI no longer tests LLVM 20 on Windows. Use LLVM 23.
 
 > [!IMPORTANT]
 > This package uses version "20" to represent the most recent official releases
