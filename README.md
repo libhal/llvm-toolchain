@@ -54,6 +54,20 @@ target_sources(my_app PUBLIC
 
 See [demos/cpp-modules/](demos/cpp-modules/) for a complete working example.
 
+### `import std`
+
+With LLVM 23 and CMake 4.5 or newer, `import std;` works in any C++23 target
+CMake scans for modules, with nothing else to set. For Cortex-M targets, this
+package tells CMake which multilib's `libc++.modules.json` to build the `std`
+module from (`CMAKE_CXX_STDLIB_MODULES_JSON`), because CMake's own lookup
+leaves out the target flags.
+
+libc++ for Cortex-M is built without threads, so its `std` module leaves out
+the lock types (`std::lock_guard`, `std::unique_lock`, `std::scoped_lock`).
+Include `<mutex>` in the global module fragment to use them.
+
+See [demos/import-std/](demos/import-std/) for a complete working example.
+
 ## 📋 Supported Versions & Host Platforms
 
 All binaries are downloaded from official sources:
