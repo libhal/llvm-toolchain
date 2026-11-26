@@ -436,6 +436,58 @@ class LLVMToolchainPackage(ConanFile):
         self.conf_info.append("tools.build:exelinkflags", exelinkflags)
         self.conf_info.append("tools.build:defines", definitions)
 
+        self._set_std_modules_json(cxx_flags)
+
+    def _set_std_modules_json(self, cxx_flags):
+        """Point CMake's `import std` support at the target's libc++ module.
+
+        CMake 4.5 finds the std module with
+        `clang++ -print-file-name=libc++.modules.json`, without the target
+        flags from CMAKE_CXX_FLAGS. For a Cortex-M target that returns the
+        host's file (e.g. macOS's /usr/lib/libc++.modules.json), which can't
+        build for the target. Ask clang with the target flags, so it picks the
+        multilib's own file, and hand that to CMake with
+        CMAKE_CXX_STDLIB_MODULES_JSON. Older CMake ignores the variable.
+        """
+        if not cxx_flags:
+            return
+
+        bin_dir = Path(self.package_folder) / "bin"
+        # "clang++.exe" on Windows hosts
+        clang = next((path for path in (bin_dir / "clang++",
+                                        bin_dir / "clang++.exe")
+                      if path.exists()), None)
+        if clang is None:
+            self.output.warning(
+                f"No clang++ in {bin_dir}, so `import std` won't work")
+            return
+
+        # Each flag can hold its value after a space, like "-target <triple>"
+        args = [arg for flag in cxx_flags for arg in flag.split()]
+        try:
+            result = subprocess.run(
+                [str(clang), *args, "-print-file-name=libc++.modules.json"],
+                capture_output=True, text=True, check=True)
+        except (OSError, subprocess.CalledProcessError) as error:
+            self.output.warning(
+                f"Could not find libc++.modules.json for the target: {error}")
+            return
+
+        modules_json = Path(result.stdout.strip())
+        # clang prints the bare name when it can't find the file
+        if not modules_json.is_absolute() or not modules_json.exists():
+            self.output.warning(
+                "This LLVM has no libc++.modules.json for the target, so "
+                "`import std` won't work")
+            return
+
+        # clang prints "<prefix>/bin/../lib/...", so drop the "bin/.."
+        modules_json = modules_json.resolve()
+        self.output.info(f"libc++.modules.json: {modules_json}")
+        self.conf_info.update("tools.cmake.cmaketoolchain:extra_variables", {
+            "CMAKE_CXX_STDLIB_MODULES_JSON": modules_json.as_posix(),
+        })
+
     @property
     def _lib_path(self) -> Path:
         return Path(self.package_folder) / "lib"
